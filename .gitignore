@@ -1,0 +1,8 @@
+*.bak
+*.save
+.DS_Store
+Thumbs.db
+.vscode/
+node_modules/
+*.swp
+*~
