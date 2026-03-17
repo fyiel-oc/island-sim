@@ -1,0 +1,3467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Island Sim v5</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#0d0f18}
+#gw{width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;position:relative}
+#gw canvas{display:block}
+#hr{position:absolute;pointer-events:none}
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+#hr *{box-sizing:border-box;margin:0;padding:0;font-family:'IBM Plex Mono','Courier New',monospace}
+::-webkit-scrollbar{width:0.31vw}
+::-webkit-scrollbar-thumb{background:#334155;border-radius:0.16vw}
+
+/* ── SHELL: rows = 8.33vh / 1fr / 5.56vh (≈60/1fr/40 at 720h) ── */
+.hs{width:100%;height:100%;display:grid;grid-template-rows:8.33vh 1fr 5.56vh;color:#f1f5f9}
+
+/* ── TOP BAR ── */
+.tb{background:#120800f8;border-bottom:0.28vh solid #3a1800;display:flex;align-items:center;padding:0 0.94vw;gap:0.47vw;pointer-events:all}
+.brand{color:#f97316;font-size:1.72vw;font-weight:800;letter-spacing:.1em;margin-right:0.31vw;text-shadow:0 0 0.94vw #f9731650}
+.vsep{width:0.08vw;height:3.33vh;background:#3a1800;flex-shrink:0}
+.chip{background:#00000060;border:0.08vw solid #ffffff20;border-radius:0.47vw;padding:0.42vh 0.7vw;display:flex;flex-direction:column;align-items:center;min-width:5vw;pointer-events:all;cursor:default;transition:background .1s}
+.chip:hover{background:#ffffff10}
+.cv{font-size:1.1vw;font-weight:700;line-height:1.2;display:flex;align-items:baseline;gap:0.16vw;color:#fff}
+.cl{font-size:0.75vw;color:#fff9;letter-spacing:.03em;margin-top:0.14vh;font-weight:500}
+.dv{font-size:0.7vw;font-weight:700;margin-left:0.16vw}
+/* ── CAREER ELECTION EVENT ── */
+.elect-badge{display:inline-flex;align-items:center;gap:0.31vw;background:#1a0f2e;border:0.08vw solid #7c3aed;border-radius:0.47vw;padding:0.28vh 0.55vw;font-size:0.78vw;color:#c4b5fd;font-weight:600;white-space:nowrap;pointer-events:all}
+.elect-badge span{color:#a78bfa;font-weight:800}
+.up{color:#4ade80}.dn{color:#f87171}.fl{color:#94a3b8}
+.tbr{margin-left:auto;display:flex;align-items:center;gap:0.55vw}
+.wb{font-size:0.78vw;padding:0.28vh 0.63vw;border-radius:0.31vw;font-weight:700;border:0.08vw solid;white-space:nowrap}
+.won{background:#0a2016;color:#4ade80;border-color:#166534}
+.woff{background:#0f1e3a;color:#93c5fd;border-color:#1e3a8a}
+.wch{background:#2a1400;color:#fbbf24;border-color:#92400e}
+.wfr{background:#1a1d2a;color:#94a3b8;border-color:#334155}
+.spdrow{display:flex;gap:0.16vw;pointer-events:all}
+.sb{background:#1a1d2a;border:0.08vw solid #2a2e42;border-radius:0.23vw;color:#94a3b8;font-size:0.78vw;padding:0.28vh 0.47vw;cursor:pointer;font-family:inherit;pointer-events:all;transition:all .1s}
+.sb:hover{background:#2a2e42;color:#e2e8f0}
+.sb.act{background:#1e3a8a;border-color:#2563eb;color:#fff}
+
+/* ── MAIN 3-col: 25vw / 1fr / 27.34vw (≈320/1fr/350 at 1280w) ── */
+.ma{display:grid;grid-template-columns:25vw 1fr 27.34vw;overflow:hidden}
+.lp,.rp{background:#0e1020f8;display:flex;flex-direction:column;overflow:hidden;pointer-events:all}
+.lp{border-right:0.08vw solid #252840}
+.rp{border-left:0.08vw solid #252840}
+.mc{background:transparent}
+.sh{padding:0.69vh 0.86vw 0.56vh;font-size:0.78vw;font-weight:700;letter-spacing:.07em;color:#64748b;text-transform:uppercase;border-bottom:0.08vw solid #252840;background:#08091490;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.sh span{font-size:0.78vw;color:#475569;font-weight:400;text-transform:none;letter-spacing:0}
+
+/* ── AGENT LIST ── */
+.al{padding:0.56vh 0.63vw;display:flex;flex-direction:column;gap:0.28vh;overflow-y:auto;flex:1;min-height:0}
+.ar{display:flex;align-items:center;gap:0.47vw;padding:0.56vh 0.47vw;border-radius:0.39vw;background:#141826;cursor:pointer;transition:background .1s;border:0.08vw solid transparent;flex-shrink:0}
+.ar:hover{background:#1c2136;border-color:#2a3050}
+.ar.sel{background:#1a2040;border-color:#2563eb}
+.av{width:2.34vw;height:2.34vw;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.78vw;font-weight:700;flex-shrink:0;border:0.16vw solid}
+.ai{flex:1;min-width:0}
+.an{font-size:1.02vw;font-weight:600;color:#fff;line-height:1.2}
+.arl{font-size:0.86vw;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:0.14vh}
+.ab{display:flex;flex-direction:column;gap:0.28vh;min-width:5.16vw}
+.br{display:flex;align-items:center;gap:0.23vw}
+.bl{font-size:0.78vw;color:#94a3b8;min-width:1.88vw;font-weight:600}
+.ba{width:3.59vw;height:0.56vh;background:#1c2136;border-radius:0.16vw;overflow:hidden;flex-shrink:0}
+.bf{height:100%;border-radius:0.16vw;transition:width .4s,background .4s}
+.bn{font-size:0.86vw;color:#fff;min-width:1.56vw;text-align:right;font-weight:600}
+
+/* ── TREASURY ── */
+.tb2{padding:0.97vh 0.86vw;border-bottom:0.08vw solid #252840;flex-shrink:0}
+.tv{font-size:1.56vw;font-weight:800;color:#fbbf24;line-height:1}
+.tl2{font-size:0.86vw;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;margin-bottom:0.42vh;font-weight:600}
+.td{font-size:0.86vw;font-weight:700;margin-left:0.47vw}
+.m3w{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.23vw;margin-top:0.69vh}
+.m3{background:#0c0f1a;border-radius:0.31vw;padding:0.42vh 0.39vw;text-align:center;border:0.08vw solid #252840}
+.m3v{font-size:0.94vw;font-weight:700;color:#fff;line-height:1.1}
+.m3l{font-size:0.78vw;color:#94a3b8;margin-top:0.28vh}
+
+/* ── INVENTORY ── */
+.ig{display:grid;grid-template-columns:1fr 1fr;gap:0.23vw;padding:0.56vh 0.63vw;flex-shrink:0}
+.ii{background:#0c0f1a;border-radius:0.31vw;padding:0.42vh 0.47vw;display:flex;justify-content:space-between;align-items:center;border:0.08vw solid #252840}
+.in{font-size:0.86vw;color:#e2e8f0;font-weight:500}
+.iq{font-size:0.94vw;font-weight:700;color:#fff;line-height:1}
+.id{font-size:0.78vw;color:#94a3b8}
+.crit{color:#f87171!important}.warn{color:#fbbf24!important}.ok{color:#4ade80!important}
+
+/* ── ECONOMY LOG ── */
+.belog{padding:0.42vh 0.63vw;display:flex;flex-direction:column;gap:0.28vh;overflow-y:auto;max-height:11.11vh;flex-shrink:0}
+.beli{font-size:0.78vw;color:#94a3b8;line-height:1.4}
+.beli.earn{color:#4ade80}.beli.spend{color:#f87171}.beli.fuel{color:#fbbf24}
+
+/* ── RIGHT PANEL ── */
+.cal{display:flex;gap:0.16vw;padding:0.56vh 0.86vw}
+.cd{flex:1;text-align:center;padding:0.28vh 0.08vw;border-radius:0.23vw;font-size:0.78vw;font-weight:600;background:#0c0f1a;color:#64748b;border:0.08vw solid transparent;transition:all .2s}
+.cd.act{background:#1e3a8a;color:#fff;border-color:#2563eb}
+.cd.wk{color:#94a3b8}.cd.sun{background:#2a1400;color:#fbbf24;border-color:#92400e}.cd.past{opacity:.4}
+.tbw{display:flex;align-items:center;gap:0.39vw;padding:0.28vh 0.86vw 0.69vh}
+.tba{flex:1;height:0.69vh;background:#0c0f1a;border-radius:0.16vw;overflow:hidden;border:0.08vw solid #252840}
+.tbf{height:100%;background:#2563eb;border-radius:0.16vw;transition:width .5s}
+.tbl{font-size:0.78vw;color:#94a3b8}
+.ml{padding:0.69vh 0.86vw;display:flex;flex-direction:column;gap:0.56vh}
+.mr{display:flex;align-items:center;gap:0.39vw}
+.mi{width:1.72vw;height:1.72vw;border-radius:0.23vw;font-size:0.7vw;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.mn{font-size:0.86vw;color:#e2e8f0;min-width:6.09vw;font-weight:500}
+.mb{flex:1;height:0.83vh;background:#0c0f1a;border-radius:0.16vw;overflow:hidden;border:0.08vw solid #252840}
+.mf{height:100%;border-radius:0.16vw;transition:width .5s}
+.mv2{font-size:0.94vw;font-weight:700;min-width:2.34vw;text-align:right;color:#fff}
+
+/* ── NOTIFICATIONS ── */
+.nl{overflow-y:auto;padding:0.56vh 0.63vw;display:flex;flex-direction:column;gap:0.42vh}
+.nt{border-radius:0.39vw;padding:0.56vh 0.55vw;display:flex;gap:0.39vw;border:0.08vw solid transparent;transition:opacity 1.5s ease}
+.ni2{width:1.09vw;height:1.09vw;border-radius:0.23vw;display:flex;align-items:center;justify-content:center;font-size:0.55vw;font-weight:700;flex-shrink:0;margin-top:0.28vh}
+.nb{flex:1}
+.nti{font-size:0.86vw;font-weight:600;margin-bottom:0.14vh;color:#fff}
+.nsb{font-size:0.78vw;color:#94a3b8;line-height:1.35}
+.ntm{font-size:0.7vw;color:#64748b;flex-shrink:0;white-space:nowrap}
+.nc2{background:#1a080880;border-color:#7f1d1d}.nc2 .ni2{background:#7f1d1d;color:#fca5a5}.nc2 .nti{color:#fca5a5}
+.nw2{background:#1a100080;border-color:#78350f}.nw2 .ni2{background:#78350f;color:#fcd34d}.nw2 .nti{color:#fcd34d}
+.ng2{background:#08120880;border-color:#14532d}.ng2 .ni2{background:#14532d;color:#86efac}.ng2 .nti{color:#86efac}
+.nif{background:#08101880;border-color:#1e3a5f}.nif .ni2{background:#1e3a5f;color:#93c5fd}.nif .nti{color:#93c5fd}
+
+/* ── AGENT DETAIL ── */
+#ad{flex-shrink:0;border-top:0.08vw solid #252840;padding:1.11vh 0.86vw;background:#0a0c18;display:none;flex-direction:column;gap:0.69vh;max-height:33.33vh;overflow-y:auto}
+#ad.vis{display:flex}
+.adh{display:flex;align-items:center;gap:0.63vw;margin-bottom:0.28vh}
+.adav{width:2.97vw;height:2.97vw;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.02vw;font-weight:700;border:0.16vw solid;flex-shrink:0}
+.adnm{font-size:1.09vw;font-weight:700;color:#fff;line-height:1.2}
+.admt{font-size:0.78vw;color:#94a3b8;line-height:1.4;margin-top:0.28vh}
+.adsr{display:flex;gap:0.39vw;margin-top:0.28vh}
+.ads{background:#141826;border-radius:0.31vw;padding:0.42vh 0.47vw;text-align:center;border:0.08vw solid #252840;flex:1}
+.adsv{font-size:0.94vw;font-weight:700;line-height:1}
+.adsl{font-size:0.7vw;color:#94a3b8;margin-top:0.28vh;font-weight:600;text-transform:uppercase}
+.adr{display:flex;gap:0.31vw;font-size:0.78vw;line-height:1.5}
+.adl{color:#64748b;min-width:5.47vw;flex-shrink:0;font-weight:600;font-size:0.7vw;text-transform:uppercase;letter-spacing:.04em}
+.adv{color:#e2e8f0;flex:1;font-size:0.78vw}
+.hhrow{background:#0c0f1a;border:0.08vw solid #252840;border-radius:0.31vw;padding:0.56vh 0.55vw;font-size:0.78vw;color:#e2e8f0;line-height:1.5}
+.hhrow .lbl{color:#64748b;font-size:0.7vw;font-weight:600;text-transform:uppercase}
+/* ── THIEF SYSTEM ── */
+.thief-badge{font-size:0.6vw;color:#f87171;font-weight:700;margin-left:0.2vw;background:#2d0a0a;border:0.06vw solid #7f1d1d;border-radius:0.2vw;padding:0 0.2vw}
+.detained-badge{font-size:0.6vw;color:#fbbf24;font-weight:700;margin-left:0.2vw;background:#1a1000;border:0.06vw solid #92400e;border-radius:0.2vw;padding:0 0.2vw}
+.fi{display:flex;align-items:center;gap:0.3vw;background:#0a0c18;border:0.08vw solid #252840;border-radius:0.39vw;padding:0.28vh 0.55vw;font-size:0.78vw;font-weight:700;cursor:default}
+.fi-val{color:#fff;min-width:2.5vw;text-align:right}
+.fi-chg{font-size:0.68vw;min-width:2.8vw}
+.fi-lbl{font-size:0.63vw;color:#64748b;text-transform:uppercase;letter-spacing:.04em}
+/* ── WEEKLY SUMMARY OVERLAY on right panel ── */
+#weekly-modal{display:none;position:absolute;top:0;left:0;right:0;bottom:0;background:#08091af8;z-index:50;flex-direction:column;padding:1.11vh 0.86vw;overflow-y:auto;pointer-events:all}
+#weekly-modal.vis{display:flex}
+.wm-title{font-size:1.09vw;font-weight:800;color:#fbbf24;margin-bottom:0.56vh;display:flex;justify-content:space-between;align-items:center}
+.wm-close{font-size:0.78vw;color:#475569;cursor:pointer;padding:0.2vh 0.4vw;border-radius:0.2vw;border:0.08vw solid #334155}
+.wm-close:hover{color:#fff;border-color:#64748b}
+.wm-sec{font-size:0.7vw;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin:0.56vh 0 0.28vh}
+.wm-row{display:flex;justify-content:space-between;font-size:0.74vw;padding:0.2vh 0;border-bottom:0.06vw solid #1a1d2a}
+.wm-k{color:#94a3b8}.wm-v{color:#fff;font-weight:600}
+.wm-good{color:#4ade80}.wm-bad{color:#f87171}.wm-neu{color:#94a3b8}
+/* ── TAX PANEL ── */
+.tax-row{display:flex;align-items:center;gap:0.4vw;padding:0.28vh 0;font-size:0.74vw}
+.tax-lbl{color:#94a3b8;min-width:4vw}
+.tax-val{color:#fbbf24;font-weight:700;min-width:2vw}
+.tax-btn{background:#1a1d2a;border:0.08vw solid #334155;border-radius:0.23vw;color:#94a3b8;font-size:0.7vw;padding:0.14vh 0.39vw;cursor:pointer;pointer-events:all;font-family:inherit}
+.tax-btn:hover{background:#252840;color:#fff}
+.otag{display:inline-flex;align-items:center;gap:0.23vw;background:#0a1a0a;border:0.08vw solid #14532d;border-radius:0.23vw;padding:0.14vh 0.47vw;font-size:0.7vw;color:#86efac;font-weight:600}
+.od{width:0.47vw;height:0.47vw;border-radius:50%;background:#4ade80;animation:pg 1.5s infinite;flex-shrink:0}
+@keyframes pg{0%,100%{opacity:1}50%{opacity:.2}}
+.od.off{background:#475569;animation:none}
+.th{background:#1a1e2e;border:0.08vw solid #2563eb30;border-radius:0.39vw;padding:0.69vh 0.63vw;font-size:0.78vw;color:#93c5fd;font-style:italic;line-height:1.5;margin-top:0.28vh}
+.th::before{content:'💭 ';font-style:normal}
+.mpbtn{background:#1e3a8a;border:0.08vw solid #2563eb;border-radius:0.31vw;color:#fff;font-size:0.78vw;padding:0.42vh 0.63vw;cursor:pointer;font-family:inherit;pointer-events:all;margin-top:0.42vh;font-weight:600}
+.mpbtn:hover{background:#2563eb}
+.mpbtn:disabled{background:#1a1d2a;border-color:#252840;color:#64748b;cursor:default}
+
+/* ── TRADE LOG ── */
+.trade-panel{background:#0c0f1a;border:0.08vw solid #2563eb30;border-radius:0.47vw;padding:0.83vh 0.7vw;margin-top:0.56vh}
+.trade-title{font-size:0.78vw;font-weight:700;color:#60a5fa;letter-spacing:.05em;text-transform:uppercase;margin-bottom:0.69vh;display:flex;align-items:center;gap:0.39vw}
+.trade-log{display:flex;flex-direction:column;gap:0.42vh;max-height:9.72vh;overflow-y:auto}
+.trade-entry{font-size:0.74vw;color:#94a3b8;line-height:1.4;padding:0.28vh 0;border-bottom:0.08vw solid #252840}
+.trade-entry .tok{color:#4ade80;font-weight:600}
+.trade-entry .tskip{color:#475569;font-style:italic}
+.trade-entry .twarn{color:#fbbf24}
+
+/* ── BOTTOM BAR ── */
+.nbar{background:#060810f8;border-top:0.08vw solid #252840;display:flex;align-items:center;padding:0 0.86vw;gap:0.55vw;overflow:hidden}
+.ntg{font-size:0.78vw;font-weight:700;padding:0.28vh 0.55vw;border-radius:0.31vw;flex-shrink:0;letter-spacing:.04em}
+.ntg-w{background:#0f1e3a;color:#93c5fd}
+.ntg-i{background:#0a1a0a;color:#86efac}
+.tkr{font-size:0.78vw;color:#94a3b8;overflow:hidden;white-space:nowrap;flex:1;text-overflow:ellipsis}
+.t-cr{color:#f87171}.t-gd{color:#4ade80}.t-wn{color:#fbbf24}
+.sv{background:#141826;border-radius:0.31vw;padding:0.28vh 0.7vw;text-align:center;border:0.08vw solid #252840;flex-shrink:0}
+.svv{font-size:0.94vw;font-weight:700;color:#a78bfa;line-height:1}
+.svl{font-size:0.7vw;color:#64748b;font-weight:600;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div id="gw">
+  <div id="hr"><div class="hs" id="hs"></div></div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.60.0/phaser.min.js"></script>
+<script>
+'use strict';
+// ══════════════════════════════════════════════════════════════
+//  ISLAND SIM  v5
+//  1) House assignment: each couple one house, singles own house
+//  2) Marriage system: singles can propose
+//  3) Overlap offset: left-to-right 15px steps in shared cell
+//  4) Universal slow heartbeat: every agent bobs 10px every 5s
+//  5) Right panel: richer agent info card
+//  6) Removed duplicates (Treasury shown once; date once; etc.)
+//  7) Recalibrated economy: 1 food/day/agent, realistic cash flows
+//  8) Building interactions: museum earns, hospital spends medicine,
+//     movement burns fuel, shop sells goods, etc.
+// ══════════════════════════════════════════════════════════════
+
+const W=1280, H=720;
+const LP=320, RP=350, TH=60, BH=40;
+
+// ── OLLAMA: each agent is a local LLM character ──────────────
+// Every agent periodically sends their situation to Ollama and gets
+// back a first-person thought (≤15 words). That thought is stored in
+// their memory and shown in the agent detail panel when selected.
+// Agents with different personalities reason differently about the
+// same events — a pragmatic mayor trades coolly while a worried doctor
+// panics at a medicine shortage. Mood shifts based on their reasoning.
+// Requires: ollama pull llama3.2  (or any model)
+const OLLAMA_URL='http://localhost:11434/api/chat';
+const OLLAMA_MODEL='llama3.2';
+let ollamaOnline=false;
+
+async function checkOllama(){
+  try{
+    const r=await fetch('http://localhost:11434/api/tags',{signal:AbortSignal.timeout(2000)});
+    if(r.ok){const j=await r.json();ollamaOnline=j.models?.length>0;}
+  }catch{ollamaOnline=false;}
+  document.querySelectorAll('.od').forEach(d=>d.className=ollamaOnline?'od':'od off');
+  document.querySelectorAll('.ai-lbl').forEach(el=>el.textContent=ollamaOnline?'AI live':'AI off');
+}
+
+// Generate one agent's thought given their current situation.
+// Returns a thought string, or null if Ollama is offline.
+async function ollamaThink(agent, worldCtx){
+  if(!ollamaOnline)return null;
+  const exp=Object.entries(agent.experience||{})
+    .filter(([,d])=>d>0).map(([r,d])=>`${r}(${d}d)`).join(', ')||'none';
+  const prompt=
+`You are ${agent.name}, ${agent.role.replace(/_/g,' ')} on a small island community.
+Personality: ${agent.per}
+Status: mood ${Math.round((agent.mood+1)/2*100)}% health ${Math.round(agent.health*100)}% cash $${agent.cash}
+Currently: ${agent.state} at ${agent.pos.col},${agent.pos.row}
+Experience: ${exp}
+Recent memory: ${agent.memory.slice(-2).join(' | ')||'none'}
+World: ${worldCtx}
+Respond with ONE sentence (max 15 words), first person, present tense. What are you thinking right now?`;
+  try{
+    const r=await fetch(OLLAMA_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      signal:AbortSignal.timeout(10000),
+      body:JSON.stringify({model:OLLAMA_MODEL,messages:[{role:'user',content:prompt}],stream:false})
+    });
+    if(!r.ok)return null;
+    const j=await r.json();
+    return j.message?.content?.trim()||null;
+  }catch{return null;}
+}
+
+// Queue-based agent thought system.
+// Agents are queued and thoughts generated one at a time to avoid
+// flooding Ollama with concurrent requests. Each agent gets a new
+// thought roughly every 2 sim-hours (real-time depends on speed setting).
+const THINK_QUEUE=[];
+let thinkBusy=false;
+
+function queueThink(agent, worldCtx, onDone){
+  // Deduplicate — only one pending thought per agent
+  if(THINK_QUEUE.some(q=>q.id===agent.id))return;
+  THINK_QUEUE.push({id:agent.id, agent, worldCtx, onDone});
+  if(!thinkBusy)_processThinkQueue();
+}
+
+async function _processThinkQueue(){
+  if(THINK_QUEUE.length===0){thinkBusy=false;return;}
+  thinkBusy=true;
+  const job=THINK_QUEUE.shift();
+  const thought=await ollamaThink(job.agent, job.worldCtx);
+  if(thought){
+    job.agent.lastThought=thought;
+    job.agent.memory.push(`[thought] ${thought}`);
+    if(job.agent.memory.length>8)job.agent.memory.shift();
+    // Thought subtly shifts mood based on content sentiment
+    if(/worried|fear|danger|crisis|fail|starv|broke/.test(thought.toLowerCase()))
+      job.agent.mood=Math.max(-1,job.agent.mood-0.04);
+    else if(/happy|great|good|hope|excit|proud|love/.test(thought.toLowerCase()))
+      job.agent.mood=Math.min(1,job.agent.mood+0.03);
+    if(job.onDone)job.onDone(thought);
+  }
+  // Small delay between requests
+  setTimeout(_processThinkQueue, 500);
+}
+
+
+const MAP=[
+  ['house','house','house','house','house','house','house','house'],
+  ['road', 'road', 'road', 'road', 'road', 'road', 'road', 'road' ],
+  ['hotel','hotel','road', 'airport','airport','road','upkeep','upkeep'],
+  ['museum','museum','road','townhall','townhall','road','factory','factory'],
+  ['shop', 'shop', 'road', 'church','church', 'road', 'park',  'park'  ],
+  ['bank', 'bank', 'road', 'hospital','hospital','road','police','police'],
+  ['road', 'road', 'road', 'road', 'road', 'road', 'road', 'road' ],
+  ['house','house','house','house','house','house','house','dock'  ],
+];
+const ROWS=8,COLS=8;
+
+// BFS pathfinding on road cells
+function bldgRoad(col,row){
+  for(const[dc,dr]of[[0,-1],[0,1],[-1,0],[1,0]]){
+    const nc=col+dc,nr=row+dr;
+    if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS&&MAP[nr][nc]==='road')return{col:nc,row:nr};
+  }
+  return{col,row};
+}
+function bfsPath(fc,fr,tc,tr){
+  if(fc===tc&&fr===tr)return[];
+  const toT=MAP[tr][tc];
+  const entry=toT==='road'?{col:tc,row:tr}:bldgRoad(tc,tr);
+  const fromT=MAP[fr][fc];
+  const start=fromT==='road'?{col:fc,row:fr}:bldgRoad(fc,fr);
+  const key=(c,r)=>c+','+r;
+  const vis=new Set([key(start.col,start.row)]);
+  const q=[{col:start.col,row:start.row,path:[]}];
+  let rp=null;
+  while(q.length){
+    const cur=q.shift();
+    if(cur.col===entry.col&&cur.row===entry.row){rp=[...cur.path,{col:cur.col,row:cur.row}];break;}
+    for(const[dc,dr]of[[0,-1],[0,1],[-1,0],[1,0]]){
+      const nc=cur.col+dc,nr=cur.row+dr,k=key(nc,nr);
+      if(nc<0||nc>=COLS||nr<0||nr>=ROWS||vis.has(k))continue;
+      if(MAP[nr][nc]==='road'){vis.add(k);q.push({col:nc,row:nr,path:[...cur.path,{col:cur.col,row:cur.row}]});}
+    }
+  }
+  if(!rp)return[{col:tc,row:tr}];
+  const full=[];
+  if(fromT!=='road')full.push({col:start.col,row:start.row});
+  full.push(...rp.slice(1));
+  if(toT!=='road')full.push({col:tc,row:tr});
+  return full;
+}
+
+const CFILL={road:0x1e3a0f,house:0xa84800,hotel:0x7a6000,airport:0x083060,
+  museum:0x7a6000,townhall:0x987800,upkeep:0x605200,factory:0x705800,
+  shop:0x7a6000,church:0x706800,park:0x0e4010,bank:0x605400,
+  hospital:0x7a6000,police:0x605800,dock:0x083060};
+const CBORD={road:0x2a5c18,house:0xf97316,hotel:0xfbbf24,airport:0x3b82f6,
+  museum:0xfbbf24,townhall:0xfde047,upkeep:0xfbbf24,factory:0xfbbf24,
+  shop:0xfbbf24,church:0xfbbf24,park:0x22c55e,bank:0xfbbf24,
+  hospital:0xfbbf24,police:0xfbbf24,dock:0x3b82f6};
+const CLBL={road:'',house:'House',hotel:'Hotel',airport:'Airport',museum:'Museum',
+  townhall:'Town Hall',upkeep:'Upkeep',factory:'Factory',shop:'Shop',
+  church:'Church',park:'Park',bank:'Bank',hospital:'Hospital',
+  police:'Police',dock:'Dock'};
+
+// ── HOUSE ASSIGNMENTS ────────────────────────────────────────
+// Each married couple shares a house; each single has their own.
+// Map: houseId → {col,row,residents:[agentId,...],value,rentPerWeek}
+const HOUSES={
+  H1:{col:0,row:0,residents:['maya','ken'],   value:900, rentPerWeek:0,  label:'Maya & Ken'},
+  H2:{col:1,row:0,residents:['cara','dan'],   value:700, rentPerWeek:0,  label:'Cara & Dan'},
+  H3:{col:2,row:0,residents:['fay'],          value:750, rentPerWeek:50, label:'Fay (landlord)'},// fay rents out
+  H4:{col:3,row:0,residents:['hal'],          value:600, rentPerWeek:0,  label:'Hal'},
+  H5:{col:4,row:0,residents:['eve'],          value:550, rentPerWeek:0,  label:'Eve'},
+  H6:{col:5,row:0,residents:['sam'],          value:500, rentPerWeek:35, label:'Sam (rents)'},
+  H7:{col:6,row:0,residents:['tara'],         value:650, rentPerWeek:40, label:'Tara (rents)'},
+  H8:{col:7,row:0,residents:['grace'],        value:450, rentPerWeek:30, label:'Grace (rents)'},
+  H9:{col:0,row:7,residents:['ben','rosa'],   value:750, rentPerWeek:0,  label:'Ben & Rosa'},
+  H10:{col:1,row:7,residents:['pat','lin'],   value:600, rentPerWeek:0,  label:'Pat & Lin'},
+  H11:{col:2,row:7,residents:['fatherjo'],    value:480, rentPerWeek:0,  label:'Fr.Jo'},
+  H12:{col:3,row:7,residents:['mia'],         value:600, rentPerWeek:0,  label:'Dr.Mia'},
+  H13:{col:4,row:7,residents:['marco'],        value:420, rentPerWeek:0,  label:'Marco'},
+};
+// Build agent→house lookup
+const AGENT_HOUSE={};
+for(const[hid,h]of Object.entries(HOUSES))for(const aid of h.residents)AGENT_HOUSE[aid]=hid;
+
+// ── INITIAL STATE ────────────────────────────────────────────
+// 7) Recalibrated economy:
+//   17 agents × 1 food/day = 17 food/day
+//   30-day stock = 510 units (rounded to 510)
+//   fuel: agents move ~6 cells/day each = 102 moves; 0.1 fuel/move ≈ 10 fuel/day → 300 units/30d
+//   medicine: 1 unit/visit to hospital (avg 2/day) → 60 units/30d
+// ── INITIAL STATE ────────────────────────────────────────────
+// Treasury $1,000. All stocks = 3-day supply.
+//   food:     17 agents × 1/day × 3d = 51 units
+//   medicine: 2 visits/day × 3d      =  6 units
+//   fuel:     10 L/day × 3d          = 30 L
+//   rawMat:   20/day × 3d            = 60 units
+//   exports:  3d production only (goods 24, fish 30, minerals 12)
+//   alcohol:  1/day × 3d             =  3 bottles
+const INIT={
+  time:{day:1,week:1,hour:6,minute:0,dayOfWeek:1,simSpeed:1},
+  treasury:{balance:1000,income:0,expense:0,taxRate:0.10,deficitPct:0,rentIncome:0},
+  metrics:{economy:55,morale:60,happiness:62,reputation:55,crimeRate:18,tourists:2},
+  deltas:{treasury:0,economy:0,morale:0,happiness:0,reputation:0,crimeRate:0,tourists:0},
+  futures:{          // world economy index — daily seeded random walk
+    value:1000,      // current index level (starts at 1000 like S&P)
+    prev:1000,
+    change:0,        // absolute daily change
+    changePct:0,     // % change
+    history:[],      // last 14 daily closes for sparkline
+    multiplier:1.0,  // current price multiplier effect on all goods
+    seed:Date.now(), // seed resets daily using real timestamp
+  },
+  weeklySummary:null, // populated every 7 days
+  inv:{
+    food:      {qty:51,  use:17,  buy:3,  sell:5,  cat:'food',    unit:'kg',    nominalBuy:3,  nominalSell:5},
+    medicine:  {qty:6,   use:0,   buy:12, sell:20, cat:'medicine', unit:'unit',  nominalBuy:12, nominalSell:20},
+    fuel:      {qty:30,  use:10,  buy:6,  sell:0,  cat:'goods',   unit:'L',     nominalBuy:6},
+    rawMat:    {qty:60,  use:20,  buy:10, sell:0,  cat:'material', unit:'unit',  nominalBuy:10},
+    goods:     {qty:24,  use:0,   buy:0,  sell:0,  cat:'export',  dailyProd:8,  exportPrice:45, nominalExport:45, dockStock:0},
+    fish:      {qty:30,  use:0,   buy:0,  sell:0,  cat:'export',  dailyProd:10, exportPrice:18, nominalExport:18, dockStock:0},
+    minerals:  {qty:12,  use:0,   buy:0,  sell:0,  cat:'export',  dailyProd:4,  exportPrice:28, nominalExport:28, dockStock:0},
+    alcohol:   {qty:3,   use:1,   buy:8,  sell:14, cat:'luxury',  unit:'bottle', nominalBuy:8,  nominalSell:14},
+  },
+  supply:{status:'normal',interval:3,nextDay:4,theft:0.04},
+  prayer:0, crises:[], log:[{type:'good',title:'Island founded!',body:'Treasury $1,000. 3-day stocks. Good luck — you will need it.',day:1,time:'06:00'}],
+  bldg:{
+    // Each building has: condition 0-100 (degrades daily), maintenanceCost (daily treasury drain)
+    // condition affects output/revenue multiplier. Upkeep worker restores condition.
+    hotel:   {open:true,guests:0,   revenueToday:0, condition:90, maintenanceCost:8,  vandalism:0},
+    airport: {open:true,flights:0,                  condition:85, maintenanceCost:12, vandalism:0},
+    museum:  {open:true,visitors:0, revenueToday:0, condition:88, maintenanceCost:6,  vandalism:0},
+    townhall:{open:true,                             condition:95, maintenanceCost:5,  vandalism:0},
+    upkeep:  {open:true,efficiency:100,              condition:80, maintenanceCost:4,  vandalism:0},
+    factory: {open:true,outputRate:1.0,accidents:0, condition:85, maintenanceCost:10, vandalism:0},
+    shop:    {open:true,salesRevenue:0,              condition:92, maintenanceCost:4,  vandalism:0},
+    church:  {open:true,donations:0,                condition:90, maintenanceCost:3,  vandalism:0},
+    park:    {open:true,eventToday:false,            condition:88, maintenanceCost:3,  vandalism:0},
+    bank:    {open:true,loanBook:0,interestEarned:0,condition:93, maintenanceCost:7,  vandalism:0},
+    hospital:{open:true,patients:[],medUsedToday:0, condition:90, maintenanceCost:9,  vandalism:0},
+    police:  {open:true,arrests:0,                  condition:85, maintenanceCost:5,  vandalism:0},
+    dock:    {open:true,                             condition:80, maintenanceCost:6,  vandalism:0},
+    // House conditions — indexed by houseId
+    houses:{
+      H1:{condition:90,maintenanceCost:2},H2:{condition:88,maintenanceCost:2},
+      H3:{condition:85,maintenanceCost:2},H4:{condition:80,maintenanceCost:2},
+      H5:{condition:82,maintenanceCost:2},H6:{condition:78,maintenanceCost:2},
+      H7:{condition:85,maintenanceCost:2},H8:{condition:75,maintenanceCost:2},
+      H9:{condition:88,maintenanceCost:2},H10:{condition:83,maintenanceCost:2},
+      H11:{condition:76,maintenanceCost:2},H12:{condition:80,maintenanceCost:2},
+      H13:{condition:70,maintenanceCost:2}, // Marco's place — a bit rough
+    },
+    // Dynamic pricing agents
+    dockPriceIndex:1.0,
+    airportFlightCost:50,
+    airportPriceIndex:1.0,
+  },
+  // Real-time cash flow ledger (resets daily)
+  ledger:[],
+};
+
+// Precomputed road cells for patrol routing
+const ROAD_CELLS=[];
+for(let r=0;r<8;r++)for(let c=0;c<8;c++)if(MAP[r][c]==='road')ROAD_CELLS.push({col:c,row:r});
+
+// ── AGENTS ───────────────────────────────────────────────────
+// REPUTATION — TWO SEPARATE SYSTEMS:
+//
+// 1) ISLAND REPUTATION  →  s.metrics.reputation  (0–100)
+//    The island's standing in the world. A single shared score.
+//    Updated by: Tara's tourist reviews, world crises, elections, events.
+//    Affects: tourist volume, import prices, trade fees, rent multiplier.
+//    Shown on: topbar chip "Reputation", right-panel market prices.
+//
+// 2) INDIVIDUAL SOCIAL CREDIT  →  a.socialCredit  (0–100 per agent)
+//    Each resident's personal standing within the community.
+//    Updated by: bankruptcy (-30), crime, loan defaults, career wins.
+//    Affects: careerFitScore bonus (community trusts them more),
+//             bank loan eligibility, individual rent negotiation.
+//    Shown on: agent detail panel.
+//
+const mkA=o=>({
+  needs:{hunger:0,sleep:0.8},mood:0.5,health:1.0,cash:200,sav:300,
+  loan:0,loanWeekly:0,debtDays:0,bankrupt:false,
+  experience:{},       // {role: daysWorked}
+  socialCredit:60,     // individual social standing (0–100)
+  criminalRecord:0,    // number of confirmed crimes
+  isThief:false,       // currently operating as thief
+  detained:false,      // in custody at police station
+  detainedDays:0,      // days remaining in detention
+  thieveryExp:0,       // 0–100: stealth skill
+  successfulSteals:0,
+  detectedSteals:0,
+  stolenCash:0,        // stolen cash stash awaiting fencing
+  stolenGoods:[],      // [{type,qty,val}] stolen inventory items
+  pos:{col:0,row:0},state:'sleeping',destination:null,
+  path:[],pathStep:0,workErr:0.05,crimProb:0.02,
+  memory:[],lastThought:'',fuelUsedToday:0,
+  ...o
+});
+// houseCell computed from AGENT_HOUSE after definition
+const AGENTS=[
+  mkA({id:'maya',  name:'Maya',   ini:'MA',g:'F',age:42,role:'mayor',         col:0x7c3aed,ch:'#7c3aed',sal:150,sp:'ken',   wp:{col:3,row:3},pos:{col:0,row:0},cash:400,sav:1200,mood:.6, ns:1.3,per:'Pragmatic, ambitious, reputation-protective, quietly stressed'}),
+  mkA({id:'ken',   name:'Ken',    ini:'KE',g:'M',age:44,role:'banker',         col:0x16a34a,ch:'#16a34a',sal:140,sp:'maya',  wp:{col:0,row:5},pos:{col:0,row:0},cash:350,sav:2100,mood:.5, ns:0.8,per:'Cautious, risk-averse, loyal, quietly resentful of Maya'}),
+  mkA({id:'cara',  name:'Cara',   ini:'CA',g:'F',age:36,role:'factory_mgr',    col:0xea580c,ch:'#ea580c',sal:110,sp:'dan',   wp:{col:6,row:3},pos:{col:3,row:0},cash:280,sav:800, mood:.5, ns:0.6,per:'Driven workaholic. Corners safety under pressure. Lonely'}),
+  mkA({id:'dan',   name:'Dan',    ini:'DA',g:'M',age:33,role:'factory_worker',  col:0xf59e0b,ch:'#f59e0b',sal:70, sp:'cara',  wp:{col:6,row:3},pos:{col:3,row:0},cash:120,sav:50,  mood:.55,ns:1.1,per:'Hardworking, anxious about debt. His boss is his wife'}),
+  mkA({id:'eve',   name:'Eve',    ini:'EV',g:'F',age:31,role:'police',          col:0x6366f1,ch:'#6366f1',sal:100,sp:null,    wp:{col:6,row:5},pos:{col:4,row:0},cash:200,sav:600, mood:.6, ns:1.4,per:'Strict idealist. Overworks during crime waves. Secretly lonely'}),
+  mkA({id:'ben',   name:'Ben',    ini:'BE',g:'M',age:39,role:'shopkeeper',      col:0xca8a04,ch:'#ca8a04',sal:120,sp:'rosa',  wp:{col:0,row:4},pos:{col:0,row:7},cash:320,sav:900, mood:.7, ns:1.0,per:'Sociable opportunist. Price-gouges in scarcity'}),
+  mkA({id:'pat',   name:'Pat',    ini:'PA',g:'M',age:47,role:'upkeep_worker',   col:0x0284c7,ch:'#0284c7',sal:80, sp:'lin',   wp:{col:6,row:2},pos:{col:1,row:7},cash:150,sav:400, mood:.6, ns:0.5,per:'Stoic, practical, under-appreciated'}),
+  mkA({id:'fatherjo',name:'Fr.Jo',ini:'JO',g:'M',age:58,role:'priest',          col:0xfcd34d,ch:'#fcd34d',sal:60, sp:null,    wp:{col:3,row:4},pos:{col:2,row:7},cash:80, sav:200, mood:.75,ns:1.0,per:'Compassionate, wise, politically neutral, keeper of secrets'}),
+  mkA({id:'mia',   name:'Dr.Mia', ini:'MI',g:'F',age:35,role:'doctor',          col:0x0ea5e9,ch:'#0ea5e9',sal:130,sp:null,    wp:{col:3,row:5},pos:{col:3,row:7},cash:300,sav:700, mood:.55,ns:1.5,per:'Empathetic, overworked, absorbs others pain'}),
+  mkA({id:'hal',   name:'Hal',    ini:'HA',g:'M',age:52,role:'airport_master',  col:0x93c5fd,ch:'#93c5fd',sal:90, sp:null,    wp:{col:3,row:2},pos:{col:7,row:0},cash:200,sav:500, mood:.5, ns:0.6,per:'World-weary, well-connected, dry humour, first to hear news'}),
+  mkA({id:'sam',   name:'Sam',    ini:'SA',g:'M',age:28,role:'journalist',       col:0xf9a8d4,ch:'#f9a8d4',sal:90, sp:null,    wp:null,         pos:{col:5,row:0},cash:180,sav:100, mood:.65,ns:1.8,per:'Curious gossip addict. Amplifies drama for attention'}),
+  mkA({id:'tara',  name:'Tara',   ini:'TA',g:'F',age:30,role:'tourist_rep',      col:0xe879f9,ch:'#e879f9',sal:0,  sp:null,    wp:null,         pos:{col:6,row:7},cash:500,sav:2000,mood:.75,ns:1.5,per:'Observant, fair, vocal, charmed by authentic culture',satScore:65}),
+  mkA({id:'rosa',  name:'Rosa',   ini:'RO',g:'F',age:37,role:'housewife',         col:0xf472b6,ch:'#f472b6',sal:0,  sp:'ben',   wp:null,         pos:{col:0,row:7},cash:150,sav:300, mood:.8, ns:1.5,per:'Warm social butterfly, community organiser'}),
+  mkA({id:'lin',   name:'Lin',    ini:'LI',g:'F',age:44,role:'housewife',         col:0x6ee7b7,ch:'#6ee7b7',sal:0,  sp:'pat',   wp:null,         pos:{col:1,row:7},cash:100,sav:250, mood:.72,ns:0.7,per:'Calm truth anchor, trusted confidant, stabilises panic'}),
+  mkA({id:'grace', name:'Grace',  ini:'GR',g:'F',age:26,role:'wanderer',          col:0xfb923c,ch:'#fb923c',sal:0,  sp:null,    wp:null,         pos:{col:4,row:7},cash:80, sav:30,  mood:.7, ns:2.0,per:'Free-spirited idealist, organises park events'}),
+  mkA({id:'fay',   name:'Fay',    ini:'FA',g:'F',age:48,role:'landlord',          col:0x818cf8,ch:'#818cf8',sal:100,sp:null,    wp:{col:0,row:2},pos:{col:6,row:0},cash:400,sav:1800,mood:.6, ns:0.7,per:'Mercenary, property-proud, soft spot for community'}),
+  mkA({id:'marco', name:'Marco',  ini:'MR',g:'M',age:34,role:'wanderer',          col:0x64748b,ch:'#64748b',sal:0,  sp:null,    wp:null,         pos:{col:4,row:7},cash:40, sav:0,   mood:.4, ns:1.2,per:'Drifter, street-smart, keeps to himself, knows things'}),
+  // Zack — experienced thief. Starts as active thief with high stealth skill.
+  // Lives off-grid: no house assignment, no rent, no tax. Squats in vacant houses at night.
+  mkA({id:'zack',  name:'Zack',   ini:'ZK',g:'M',age:29,role:'wanderer',          col:0xdc2626,ch:'#dc2626',sal:0,  sp:null,    wp:null,         pos:{col:6,row:7},cash:180,sav:0,   mood:.3, ns:0.5,per:'Calculating, patient, invisible in plain sight. Survival over morals.',
+    isThief:true, thieveryExp:70, successfulSteals:12, socialCredit:15,
+    noRent:true, noTax:true, squatter:true, // exempt from rent and tax
+  }),
+];
+// Assign houseCell from HOUSES table
+AGENTS.forEach(a=>{
+  const hid=AGENT_HOUSE[a.id];
+  const h=HOUSES[hid];
+  if(h)a.houseCell={col:h.col,row:h.row};
+  else a.houseCell={col:0,row:0};
+  a.houseId=hid;
+});
+
+// Marriage eligibility check
+function canMarry(a,b){
+  return !a.sp&&!b.sp&&a.g!==b.g&&a.id!==b.id;
+}
+
+// ── CAREER SYSTEM ────────────────────────────────────────────
+// Each public role has: salary, workplace cell, fit score keywords,
+// and a min-happiness threshold for the incumbent to keep their job.
+// public:true  → elected every 30 days, anyone can run, no term limit
+// public:false → private hire, permanent while productive, minExp=days needed for full efficiency
+const CAREERS={
+  mayor:         {sal:150, wp:{col:3,row:3}, fit:['pragmatic','ambitious','leader','organised'],   unique:true, public:true,  minExp:0},
+  banker:        {sal:140, wp:{col:0,row:5}, fit:['cautious','risk','money','savings','numbers'],   unique:true, public:true,  minExp:0},
+  police:        {sal:100, wp:{col:6,row:5}, fit:['strict','justice','law','order','idealist'],     unique:true, public:true,  minExp:0},
+  doctor:        {sal:130, wp:{col:3,row:5}, fit:['empathetic','health','care','medicine'],         unique:true, public:true,  minExp:0},
+  airport_master:{sal:90,  wp:{col:3,row:2}, fit:['connected','world','experienced','organised'],   unique:true, public:true,  minExp:0},
+  upkeep_worker: {sal:80,  wp:{col:6,row:2}, fit:['practical','stoic','reliable','maintenance'],    unique:true, public:true,  minExp:0},
+  priest:        {sal:60,  wp:{col:3,row:4}, fit:['compassionate','wise','neutral','faith'],        unique:true, public:true,  minExp:0},
+  factory_mgr:   {sal:110, wp:{col:6,row:3}, fit:['driven','production','manage','factory','work'], unique:true, public:false, minExp:30},
+  factory_worker:{sal:70,  wp:{col:6,row:3}, fit:['hardwork','strong','reliable','labour'],        unique:false,public:false, minExp:7},
+  shopkeeper:    {sal:120, wp:{col:0,row:4}, fit:['social','trade','opportunist','merchant'],       unique:true, public:false, minExp:14},
+  landlord:      {sal:100, wp:{col:0,row:2}, fit:['property','money','mercenary','business'],       unique:true, public:false, minExp:14},
+  journalist:    {sal:90,  wp:null,          fit:['curious','story','drama','truth','observe'],    unique:false,public:false, minExp:7},
+  wanderer:      {sal:0,   wp:null,          fit:[],                                               unique:false,public:false, minExp:0},
+  housewife:     {sal:0,   wp:null,          fit:['social','community','warm','care'],             unique:false,public:false, minExp:0},
+  tourist_rep:   {sal:0,   wp:null,          fit:['observe','fair','culture','social'],            unique:false,public:false, minExp:0},
+};
+
+// Score how well an agent fits a career based on personality keywords
+function careerFitScore(agent, careerKey){
+  const career=CAREERS[careerKey]; if(!career)return 0;
+  const per=(agent.per||'').toLowerCase();
+  const keyHits=career.fit.filter(k=>per.includes(k)).length;
+  const moodBonus=((agent.mood+1)/2)*10;        // happier agents perform better
+  const healthBonus=agent.health*8;
+  const repBonus=(agent.socialCredit-50)*0.1;  // individual social credit bonus
+  const tenureBonus=agent.role===careerKey?15:0; // incumbents have experience edge
+  return Math.round(keyHits*20 + moodBonus + healthBonus + repBonus + tenureBonus);
+}
+
+
+const WSCHED={
+  sam:   [{h:8,c:3,r:2},{h:10,c:3,r:3},{h:12,c:0,r:4},{h:15,c:6,r:4},{h:17,c:3,r:5},{h:20,c:5,r:0}],
+  tara:  [{h:8,c:0,r:2},{h:9,c:0,r:3},{h:11,c:6,r:4},{h:13,c:0,r:4},{h:15,c:3,r:4},{h:17,c:6,r:4},{h:20,c:6,r:7}],
+  rosa:  [{h:9,c:0,r:4},{h:11,c:6,r:4},{h:13,c:3,r:4},{h:15,c:0,r:3},{h:17,c:6,r:4},{h:20,c:0,r:7}],
+  lin:   [{h:10,c:0,r:4},{h:12,c:6,r:4},{h:14,c:3,r:4},{h:16,c:3,r:5},{h:20,c:1,r:7}],
+  grace: [{h:8,c:6,r:4},{h:10,c:0,r:3},{h:13,c:0,r:4},{h:15,c:3,r:4},{h:17,c:6,r:4},{h:20,c:4,r:7}],
+};
+
+// ── CRISIS DEFS ──────────────────────────────────────────────
+const CRISES=[
+  {id:'world_war',   prob:.03,dur:[60,180],sev:3,type:'world',note:{type:'crisis',icon:'!',title:'World War',     body:'Imports blocked.'},fx:{importBlocked:true,crimeBonus:30,moraleHit:25}},
+  {id:'pandemic',    prob:.06,dur:[30,90], sev:3,type:'world',note:{type:'crisis',icon:'!',title:'Pandemic',      body:'Medicine ×4. Tourism stops.'},fx:{medMult:4,tourStop:true,moraleHit:20}},
+  {id:'recession',   prob:.12,dur:[20,60], sev:2,type:'world',note:{type:'warn', icon:'~',title:'Recession',      body:'Exports −40%. Imports +40%.'},fx:{importMult:1.4,exportMult:0.6}},
+  {id:'storm',       prob:.18,dur:[3,7],   sev:2,type:'local',note:{type:'warn', icon:'~',title:'Storm',          body:'Roads damaged +7d shipment.'},fx:{roadDrop:50}},
+  {id:'flu',         prob:.30,dur:[14,21], sev:1,type:'local',note:{type:'warn', icon:'~',title:'Flu season',      body:'Sick rate 30%. Med demand ×2.'},fx:{sickPct:.3,medMult:2}},
+  {id:'drought',     prob:.10,dur:[14,30], sev:2,type:'local',note:{type:'warn', icon:'~',title:'Drought',         body:'Food +60%. Farm −60%.'},fx:{foodMult:1.6}},
+  {id:'factory_acc', prob:.15,dur:[3,8],   sev:2,type:'local',note:{type:'warn', icon:'~',title:'Factory accident',body:'Output −80%. Dan injured.'},fx:{factDrop:.8,injure:'dan'}},
+  {id:'crime_wave',  prob:.12,dur:[7,21],  sev:2,type:'local',note:{type:'warn', icon:'~',title:'Crime wave',      body:'Crime +25%.'},fx:{crimeBonus:25}},
+  {id:'outage',      prob:.18,dur:[2,5],   sev:1,type:'local',note:{type:'info', icon:'i',title:'Power outage',    body:'Factory −50%.'},fx:{factDrop:.5}},
+];
+const GOODS=[
+  {id:'trade_boom',  prob:.18,dur:[14,28],note:{type:'good',icon:'+',title:'Trade boom',      body:'Exports +35%.'},fx:{exportMult:1.35,moraleBonus:12}},
+  {id:'aid',         prob:.12,dur:1,       note:{type:'good',icon:'+',title:'Aid package',     body:'Food +80, medicine +30.'},fx:{foodBonus:80,medBonus:30,moraleBonus:15}},
+  {id:'festival',    prob:.25,dur:[3,3],   note:{type:'good',icon:'+',title:'Festival',        body:'Morale +20. Tourism ×2.'},fx:{moraleBonus:20,tourMult:2}},
+  {id:'tour_wave',   prob:.15,dur:[7,7],   note:{type:'good',icon:'+',title:'Tourism wave',    body:'Tourists ×2.5.'},fx:{tourMult:2.5,moraleBonus:8}},
+];
+// Community events — fire weekly, affect individual agents or buildings
+const COMMUNITY_NEG=[
+  {id:'house_fire',   w:8,  title:'House fire',          body:(a)=>`${a.name}'s house damaged. Repair costs $120.`,   fx:(a,s)=>{a.cash-=120;a.mood=Math.max(-1,a.mood-.2);s.treasury.balance-=50;}},
+  {id:'burglary',     w:10, title:'Burglary',            body:(a)=>`${a.name} robbed. Lost $${Math.min(80,a.cash)}.`, fx:(a)=>{const loss=Math.min(80,Math.max(0,a.cash));a.cash-=loss;a.mood=Math.max(-1,a.mood-.15);}},
+  {id:'illness',      w:12, title:'Sudden illness',      body:(a)=>`${a.name} fell ill. Health drops sharply.`,       fx:(a)=>{a.health=Math.max(0.1,a.health-.25);a.mood=Math.max(-1,a.mood-.1);}},
+  {id:'job_loss',     w:6,  title:'Unexpected job loss', body:(a)=>`${a.name} lost their income this week.`,          fx:(a)=>{if(a.sal>0){a.cash-=a.sal;a.mood=Math.max(-1,a.mood-.2);}},  cond:(a)=>a.sal>0&&CAREERS[a.role]?.public===false},
+  {id:'debt_trap',    w:5,  title:'Debt spiral',         body:(a)=>`${a.name} took on high-interest debt.`,           fx:(a)=>{a.loan=(a.loan||0)+100;a.loanWeekly=(a.loanWeekly||0)+15;a.mood=Math.max(-1,a.mood-.1);}},
+  {id:'fac_injury',   w:7,  title:'Workplace injury',    body:(a)=>`${a.name} injured at work. Hospital visit.`,      fx:(a,s)=>{a.health=Math.max(0.2,a.health-.2);s.inv.medicine.qty=Math.max(0,s.inv.medicine.qty-1);}, cond:(a)=>a.wp!=null},
+];
+const COMMUNITY_POS=[
+  {id:'best_island',  w:4,  title:'Best island award!',  body:()=>'Island ranked top destination. Rep +8!',            fx:(s)=>{s.metrics.reputation=Math.min(100,s.metrics.reputation+8);s.treasury.balance+=200;}},
+  {id:'zero_crime',   w:5,  title:'Zero crime week',     body:()=>'No crimes reported! Community thriving.',           fx:(s)=>{s.metrics.crimeRate=Math.max(0,s.metrics.crimeRate-5);s.metrics.happiness=Math.min(100,s.metrics.happiness+4);}},
+  {id:'windfall',     w:8,  title:'Cash windfall',       body:(a)=>`${a.name} received an unexpected inheritance!`,    fx:(a)=>{a.cash+=150;a.sav+=50;a.mood=Math.min(1,a.mood+.2);}},
+  {id:'promotion',    w:7,  title:'Community recognition',body:(a)=>`${a.name} praised for outstanding service.`,      fx:(a)=>{a.socialCredit=Math.min(100,(a.socialCredit||60)+10);a.mood=Math.min(1,a.mood+.15);}},
+  {id:'harvest',      w:6,  title:'Bumper harvest',      body:()=>'Local farms overflow. Food stock +40u.',             fx:(s)=>{s.inv.food.qty+=40;}},
+  {id:'donation',     w:5,  title:'Anonymous donation',  body:()=>'Generous donor boosts island treasury!',             fx:(s)=>{s.treasury.balance+=300;}},
+];
+
+// ── WORLD ENGINE ─────────────────────────────────────────────
+class WorldEngine{
+  constructor(state,agents){
+    this.s=state; this.a=agents;
+    this._ev={}; this._fired=new Set();
+    this._iM=1; this._eM=1; this._tM=1;
+    this._belogCallback=null; // fires when a building economy event happens
+  }
+  tick(dtMs,spd){
+    if(!spd)return;
+    const t=this.s.time;
+    // 6 real-min = 24 sim-hours → 1 real-sec = 4 sim-min at 1×
+    t.minute+=(dtMs/1000)*4*spd;
+    while(t.minute>=60){t.minute-=60;t.hour++;this._hourTick();}
+    while(t.hour>=24) {t.hour-=24;this._dayTick();}
+    this._tickNeeds(dtMs*spd/1000*4);
+    this._updateStates();
+    // 8) Building interactions per agent per tick
+    this._buildingInteractions(dtMs*spd/1000*4);
+    this._recalc();
+    this._checkGO();
+    // Integer enforcement: cash and treasury must always be whole numbers
+    this.s.treasury.balance=Math.round(this.s.treasury.balance);
+    this.a.forEach(a=>{a.cash=Math.round(a.cash);a.sav=Math.round(a.sav||0);a.loan=Math.round(a.loan||0);});
+    this.emit('update',{s:this.s,a:this.a});
+  }
+
+  _hourTick(){
+    const t=this.s.time,h=Math.floor(t.hour),dow=t.dayOfWeek,k=t.day+'-'+h;
+    if(this._fired.has(k))return; this._fired.add(k);
+    if(this._fired.size>200){const old=t.day-2;this._fired.forEach(fk=>{if(+fk.split('-')[0]<old)this._fired.delete(fk);});}
+    if(dow===1&&h===8) {this._paySalaries(); this._agentFinanceWeekly();}
+    if(dow===4&&h===8) this._collectTax();
+    if(t.day===this.s.supply.nextDay&&h===9) this._shipment();
+    if(dow===7&&h===9) this._sundayChurch();
+    if(dow===7&&h===20)this._taraReview();
+    // Criminal system — runs every hour
+    this._thiefTick();
+    this._policePpatrol();
+    if(t.day%30===0&&h===0){this._crisisRoll(); this._careerElection();}
+    // Mayor vote-of-no-confidence: happiness < 35 triggers snap election
+    if(t.day%7===0&&h===6){if(this.s.metrics.happiness<35&&!this._snapCooldown){this._mayorElection(true);this._snapCooldown=true;setTimeout(()=>{this._snapCooldown=false;},1000*60*30);}}
+    // 1) Rent collection every Thursday 09:00
+    if(dow===4&&h===9) this._collectRent();
+  }
+
+  _dayTick(){
+    const t=this.s.time;
+    t.day++; t.dayOfWeek=(t.dayOfWeek%7)+1;
+    if(t.dayOfWeek===1)t.week++;
+    // Reset daily ledger
+    this.s.ledger=[];
+    this.s.bldg.hotel.revenueToday=0;
+    this.s.bldg.museum.revenueToday=0;
+    this.s.bldg.shop.salesRevenue=0;
+    this.s.bldg.hospital.medUsedToday=0;
+    this.a.forEach(a=>{a.fuelUsedToday=0;});
+    this._dailyFood();
+    this._updateDynamicPrices();
+    this._updateFutures();
+    this._dailyExports();
+    this._tourism();
+    this._buildingDegradation(); // daily condition decay + maintenance cost
+    this._roadDecay();
+    this._expireCrises();
+    this._museumDaily();
+    this._agentFinanceDaily();
+    this._zackFenceLoot(); // thieves fence stolen goods daily
+    // Experience accumulation
+    this.a.forEach(a=>{
+      if(a.state==='working'&&a.role){
+        if(!a.experience)a.experience={};
+        a.experience[a.role]=(a.experience[a.role]||0)+1;
+      }
+    });
+    // Weekly: summary + community events + mayor tax adjustment
+    if(t.dayOfWeek===7){
+      this._weeklyCommEvents();
+      this._mayorTaxAdjust();
+      this._buildWeeklySummary();
+      this.emit('weekly', this.s.weeklySummary);
+    }
+  }
+
+  _tickNeeds(secs){
+    const r=secs/3600;
+    this.a.forEach(a=>{
+      if(a.state!=='sleeping'){
+        a.needs.hunger=Math.min(1,a.needs.hunger+.05*r); // 1 meal satisfies 20 sim-hours
+        a.needs.sleep =Math.min(1,a.needs.sleep+.035*r);
+      }else{
+        a.needs.sleep =Math.max(0,a.needs.sleep-.12*r);
+        a.needs.hunger=Math.min(1,a.needs.hunger+.01*r);
+      }
+      const base=.5-a.needs.hunger*.35-a.needs.sleep*.25-(1-a.health)*.40-(a.cash<30?.20:0);
+      a.mood=Math.max(-1,Math.min(1,base));
+      // Crime probability: base + mood deficit + cash stress + active thief + low credit
+      const creditFactor=(60-(a.socialCredit||60))/100*0.20; // low credit → higher crime prob
+      a.crimProb=Math.max(0,
+        .02+
+        (1-(a.mood+1)/2)*.20+
+        (a.cash<20?.12:0)+
+        (a.isThief?.30:0)+           // active thieves have high crime prob
+        (a.bankrupt?.08:0)+
+        creditFactor
+      );
+    });
+  }
+
+  _updateStates(){
+    const t=this.s.time,h=t.hour,dow=t.dayOfWeek;
+    const isWork=dow>=1&&dow<=5&&h>=8&&h<17,isSun=dow===7&&h>=9&&h<12,isSleep=h>=21||h<6;
+    const isNight=h>=21||h<5;
+    this.a.forEach(a=>{
+      // Detained agents: stay at police station
+      if(a.detained){
+        a.state='detained';
+        const pd={col:6,row:5};
+        if(a.destination?.col!==pd.col||a.destination?.row!==pd.row){
+          a.destination=pd; a.path=bfsPath(a.pos.col,a.pos.row,pd.col,pd.row); a.pathStep=0;
+        }
+        return;
+      }
+      // Active thieves: squatter sleep during day, roam at night
+      if(a.isThief){
+        if(isNight){
+          a.state='stealing'; // _thiefTick sets destination
+        } else {
+          // Sleep in a vacant/squatted house during the day
+          a.state='sleeping';
+          const sc=a.squatterCell||{col:6,row:7}; // default near dock
+          if(a.destination?.col!==sc.col||a.destination?.row!==sc.row){
+            a.destination=sc; a.path=bfsPath(a.pos.col,a.pos.row,sc.col,sc.row); a.pathStep=0;
+          }
+        }
+        return;
+      }
+      let nd=null;
+      if(isSleep) {a.state='sleeping';nd=a.houseCell;}
+      else if(isSun){a.state='church'; nd={col:3,row:4};}
+      else if(h>=6&&h<8){a.state='commuting';nd=a.wp||a.houseCell;}
+      else if(h>=13&&h<14){a.state='lunch';nd={col:0,row:4};}
+      else if(a.health<.25){a.state='hospital';nd={col:3,row:5};}
+      else if(isWork&&a.wp){
+        a.state=a.mood<-.4&&Math.random()<.2?'idle':'working';
+        nd=a.state==='idle'?{col:6,row:4}:a.wp;
+      }else{
+        const sc=WSCHED[a.id];
+        if(sc){const sl=[...sc].reverse().find(s=>h>=s.h);if(sl){a.state='social';nd={col:sl.c,row:sl.r};}}
+        if(!nd&&h>=17&&h<21){a.state='social';nd={col:6,row:4};}
+      }
+      if(nd&&(a.destination?.col!==nd.col||a.destination?.row!==nd.row)){
+        a.destination=nd;
+        a.path=bfsPath(a.pos.col,a.pos.row,nd.col,nd.row);
+        a.pathStep=0;
+      }
+    });
+  }
+
+  // 8) BUILDING INTERACTIONS — called each tick
+  _buildingInteractions(secs){
+    const inv=this.s.inv, bldg=this.s.bldg, t=this.s.time;
+    this.a.forEach(a=>{
+      const ct=MAP[a.pos.row]?.[a.pos.col];
+      if(!ct)return;
+
+      // 8a) FUEL: every cell step burns 0.05L of fuel
+      // We handle this in _advanceAgentWalk in scene, but also track here
+      // Fuel drain: 10L/day total (17 agents × ~6 steps/day × 0.1L ≈ 10L)
+
+      // 8b) HOSPITAL: agent present + health < 0.8 → consume medicine
+      if(ct==='hospital'&&a.health<0.8&&inv.medicine.qty>0){
+        const dose=Math.min(secs/3600*0.05, 0.02); // 0.05 units/hour
+        const healed=dose*0.8;
+        inv.medicine.qty=Math.max(0,inv.medicine.qty-dose);
+        a.health=Math.min(1,a.health+healed);
+        bldg.hospital.medUsedToday+=dose;
+        const cost=dose*inv.medicine.buy;
+        a.cash=Math.max(0,a.cash-cost*0.5); // patient pays half
+        this.s.treasury.balance+=Math.round(cost*0.5);
+      }
+
+      // 8c) SHOP: agents buy food — shopkeeper experience affects service speed (more stock served per tick)
+      if(ct==='shop'&&(a.state==='lunch'||a.state==='social')&&a.needs.hunger>0.5&&a.cash>5){
+        const shopEff=this._expEfficiency('shopkeeper'); // 0.4–1.0
+        const qty=1;
+        const price=Math.round(inv.food.sell*(1+this.s.supply.status==='blocked'?.5:0));
+        // Low-experience shopkeeper: higher price markup (less negotiation skill)
+        const effPrice=Math.round(price*(2-shopEff)); // eff=0.4 → price×1.6, eff=1.0 → price×1.0
+        if(inv.food.qty>=qty&&a.cash>=effPrice){
+          a.cash-=effPrice;
+          a.needs.hunger=Math.max(0,a.needs.hunger-0.4*shopEff);
+          inv.food.qty=Math.max(0,inv.food.qty-qty);
+          bldg.shop.salesRevenue+=effPrice;
+          this.s.treasury.balance+=Math.round(effPrice*this.s.treasury.taxRate);
+          this._ledger(`${a.name} bought food at Shop`,effPrice,'spend');
+        }
+      }
+
+      // 8d) CHURCH: donations during sunday
+      if(ct==='church'&&t.dayOfWeek===7&&Math.random()<secs/3600*0.3){
+        const donation=Math.floor(2+Math.random()*8);
+        if(a.cash>=donation){
+          a.cash-=donation;
+          bldg.church.donations+=donation;
+          this.s.treasury.balance+=Math.round(donation*0.4); // 40% to treasury
+        }
+      }
+
+      // 8e) PARK: tourists spend at park
+      if(ct==='park'&&a.id==='tara'&&Math.random()<secs/3600*0.1){
+        const tourRev=this.s.metrics.tourists*2; // $2/tourist/hour at park
+        this.s.treasury.balance+=Math.round(tourRev);
+        if(tourRev>0)this._ledger(`Park tourist spend`,tourRev,'earn');
+      }
+
+      // 8f) HOTEL: tourists staying overnight
+      if(ct==='hotel'&&t.hour>=21&&t.hour<22&&bldg.hotel.guests>0){
+        const nightly=bldg.hotel.guests*60; // $60/guest/night
+        bldg.hotel.revenueToday+=nightly;
+        this.s.treasury.balance+=Math.round(nightly*0.3); // 30% hotel tax
+        this._ledger(`Hotel revenue`,nightly,'earn');
+        bldg.hotel.guests=0; // reset after counting
+      }
+
+      // 8g) placeholder for future pub mechanic
+    });
+  }
+
+  // 7) FOOD: realistic 1 food unit per agent per day
+  _dailyFood(){
+    const inv=this.s.inv;
+    const total=this.a.length; // 17 agents
+    const touristFood=Math.floor(this.s.metrics.tourists*0.3);
+    const needed=total+touristFood;
+    if(inv.food.qty>=needed){
+      inv.food.qty-=needed;
+      this.a.forEach(a=>{a.needs.hunger=Math.max(0,a.needs.hunger-.85);});
+      this._ledger(`Daily food (${needed} units)`,-(needed*inv.food.buy),'spend');
+    }else{
+      // Partial food — hunger increases
+      const ratio=inv.food.qty/needed;
+      inv.food.qty=0;
+      this.a.forEach(a=>{
+        a.needs.hunger=Math.min(1,a.needs.hunger+(1-ratio)*0.3);
+        if(ratio<0.3)a.health=Math.max(0,a.health-.05);
+      });
+      this._news('crisis','Food shortage!',`Only ${Math.floor(ratio*100)}% of daily food available.`);
+    }
+    // fuel: 17 agents × ~6 steps/day × 0.05L = ~5L/day bulk estimate
+    if(inv.fuel.qty>=5){inv.fuel.qty-=5;this._ledger('Daily fuel (base)',-5*inv.fuel.buy,'fuel');}
+    else{this._news('warn','Low fuel','Movement efficiency reduced.');}
+  }
+
+  // Helper: efficiency multiplier for a private role worker (0.4–1.0)
+  // Full efficiency at minExp days, 40% base for brand-new hires
+  _expEfficiency(roleKey){
+    const career=CAREERS[roleKey];
+    if(!career||career.public||career.minExp===0)return 1.0;
+    const worker=this.a.find(a=>a.role===roleKey&&a.state==='working');
+    if(!worker)return 0.6; // vacant role
+    const exp=(worker.experience&&worker.experience[roleKey])||0;
+    if(exp>=career.minExp)return 1.0;
+    // Linear ramp: 0.4 at day-0 → 1.0 at minExp days
+    return Math.round((0.4+(0.6*(exp/career.minExp)))*100)/100;
+  }
+
+  // ── DYNAMIC PRICE ENGINE ─────────────────────────────────────
+  // Dock (exports): high inventory → lower price. Depleted → price recovers.
+  // Airport (imports): scarce stock → world charges more. Crisis → surcharge.
+  // Prices always bounded between 40%–250% of nominal.
+  _updateDynamicPrices(){
+    const inv=this.s.inv;
+    const bldg=this.s.bldg;
+    const day=this.s.time.day;
+
+    // ── DOCK: export price dynamics ──────────────────────────
+    // Each export good tracks dockStock = qty at time of last export.
+    // After export (qty drops) → price recovers toward nominal.
+    // If qty is high (surplus) → buyer pays less (oversupply discount).
+    const exportGoods=['goods','fish','minerals'];
+    let dockIdx=1.0;
+    exportGoods.forEach(k=>{
+      const it=inv[k]; if(!it)return;
+      const nom=it.nominalExport||it.exportPrice||1;
+      // Surplus ratio: qty vs 3× daily production (= healthy 3-day buffer)
+      const healthyQty=(it.dailyProd||1)*3;
+      const ratio=it.qty/healthyQty; // >1 = surplus, <1 = depleted
+
+      // Dock just exported → dockStock resets. Price recovers +5%/day toward nominal.
+      if(it.dockStock>0&&it.qty<it.dockStock){
+        // Export happened — start recovery
+        it._priceRecovery=(it._priceRecovery||0)+1;
+      }
+      it.dockStock=it.qty;
+
+      // Supply/demand multiplier
+      // ratio 0 = depleted  → price 150% nominal (recovery)
+      // ratio 1 = healthy   → price 100% nominal
+      // ratio 3+ = surplus  → price 60% nominal (oversupply)
+      let priceMult;
+      if(ratio<=0)       priceMult=1.50; // just exported, depleted
+      else if(ratio<0.5) priceMult=1.0+(0.5*(1-ratio/0.5)); // 100→150%
+      else if(ratio<=1)  priceMult=1.0;  // nominal
+      else               priceMult=Math.max(0.60, 1.0-0.13*(ratio-1)); // surplus discount
+
+      // World crisis modifiers on export price
+      if(this._has('world_war'))  priceMult*=0.1;  // war blockade crushes export value
+      if(this._has('recession'))  priceMult*=0.75; // recession → less world demand
+      if(this._has('trade_boom')) priceMult*=1.25; // boom → premium export price
+
+      priceMult=Math.max(0.4,Math.min(2.5,priceMult))*this._eM;
+      it.exportPrice=Math.round(nom*priceMult);
+      dockIdx+=priceMult; // running average
+    });
+    bldg.dockPriceIndex=Math.round(dockIdx/exportGoods.length*100)/100;
+
+    // ── AIRPORT: import price dynamics ────────────────────────
+    // Flight cost = base $50 + crisis surcharge. Paid per shipment.
+    // Import buy prices rise when island is desperate (low stock).
+    const importGoods=['food','medicine','fuel','rawMat'];
+    let airIdx=1.0;
+    importGoods.forEach(k=>{
+      const it=inv[k]; if(!it)return;
+      const nomBuy=it.nominalBuy||it.buy||1;
+      const nomSell=it.nominalSell||it.sell||0;
+      const daysLeft=it.use>0?it.qty/it.use:99;
+
+      // Desperation: island running low → world charges more
+      // 7+ days supply → normal price
+      // 3-7 days → +20%
+      // <3 days → +50%
+      // 0 days → +100% (emergency buy)
+      let buyMult;
+      if(daysLeft>=7)      buyMult=1.0;
+      else if(daysLeft>=3) buyMult=1.2;
+      else if(daysLeft>0)  buyMult=1.5;
+      else                 buyMult=2.0;
+
+      // World crisis surcharges on import prices
+      if(this._has('world_war'))  buyMult*=3.0;  // war → scarce supply
+      if(this._has('recession'))  buyMult*=1.4;  // recession → inflation
+      if(this._has('pandemic'))   buyMult*=(k==='medicine'?4.0:1.1);
+      if(this._has('storm'))      buyMult*=1.3;  // storm delays = premium
+      if(this._has('trade_boom')) buyMult*=0.85; // boom → cheaper imports
+
+      buyMult=Math.max(0.4,Math.min(4.0,buyMult))*this._iM;
+      // Reputation (social credit): high rep → better import deals (max -15%)
+      const repDiscount=1.0-0.15*((this.s.metrics.reputation-50)/50);
+      buyMult=Math.max(0.4,buyMult*Math.max(0.6,Math.min(1.4,repDiscount)));
+      it.buy=Math.round(nomBuy*buyMult);
+      if(nomSell>0)it.sell=Math.round(nomSell*Math.max(1,buyMult*0.7)); // sell follows buy
+      airIdx+=buyMult;
+    });
+    bldg.airportPriceIndex=Math.round(airIdx/importGoods.length*100)/100;
+
+    // ── AIRPORT FLIGHT COST: per shipment ─────────────────────
+    // Base $50. War → $300. Recession → $80. Storm → $120.
+    let flightCost=50;
+    if(this._has('world_war'))  flightCost=300;
+    else if(this._has('storm')) flightCost=120;
+    else if(this._has('recession'))flightCost=80;
+    flightCost=Math.round(flightCost*this._iM);
+    bldg.airportFlightCost=flightCost;
+
+    // Emit price update for HUD
+    this.emit('prices',{dock:bldg.dockPriceIndex,airport:bldg.airportPriceIndex,flightCost});
+  }
+
+  _dailyExports(){
+    if(this.s.supply.status==='blocked')return;
+    // Change 1: production only on working days (Mon–Fri)
+    const dow=this.s.time.dayOfWeek;
+    const isWorkDay=dow>=1&&dow<=5;
+    if(!isWorkDay)return; // no factory output on weekends
+    const inv=this.s.inv; let rev=0;
+    const factEff=this._expEfficiency('factory_mgr');
+    const effMap={goods:factEff, fish:1.0, minerals:factEff};
+    ['goods','fish','minerals'].forEach(k=>{
+      const it=inv[k];if(!it)return;
+      const eff=effMap[k]||1.0;
+      const factCondMult=this.s.bldg.factory?.condMult||1.0; // vandalism reduces output
+      const prod=Math.round((it.dailyProd||0)*eff*this.s.bldg.factory.outputRate*factCondMult);
+      const theft=Math.random()<this.s.supply.theft?prod*.2:0;
+      const out=prod-theft;
+      // Use dynamic exportPrice (already set by _updateDynamicPrices)
+      rev+=out*(it.exportPrice||it.nominalExport||0);
+      it.dockStock=it.qty; // record pre-export stock for next day's price calc
+      it.qty=Math.max(0,(it.qty||0)+out);
+    });
+    if(rev>0){this.s.treasury.balance+=Math.round(rev);this._ledger(`Dock exports`,rev,'earn');}
+    if(factEff<0.6){
+      const mgr=this.a.find(a=>a.role==='factory_mgr');
+      this._news('warn','Factory efficiency',`${mgr?.name||'Manager'} learning — ${Math.round(factEff*100)}% output.`);
+    }
+  }
+
+  _tourism(){
+    const m=this.s.metrics,bldg=this.s.bldg;
+    // Tourist count is computed in _recalc interaction matrix — don't recalculate here.
+    // If blocked, zero out (recalc may not run every day in crisis)
+    if(this.s.supply.status==='blocked'||this._has('pandemic'))m.tourists=0;
+    // Airport arrival tax $10/tourist/day
+    const airTax=m.tourists*10;
+    if(airTax>0){this.s.treasury.balance+=Math.round(airTax);this._ledger(`Airport tax (${m.tourists} tourists)`,airTax,'earn');}
+    // Hotel occupancy: 70% of tourists stay overnight
+    bldg.hotel.guests=Math.floor(m.tourists*.7);
+  }
+
+  // Museum charges tourists $15/visit
+  _museumDaily(){
+    const bldg=this.s.bldg;
+    if(!bldg.museum.open)return;
+    const visits=Math.floor(this.s.metrics.tourists*.8);
+    const rev=visits*15;
+    bldg.museum.visitors=visits;
+    bldg.museum.revenueToday=rev;
+    this.s.treasury.balance+=Math.round(rev);
+    if(rev>0)this._ledger(`Museum visits (${visits})`,rev,'earn');
+  }
+
+  // ── BUILDING DEGRADATION & MAINTENANCE ───────────────────────
+  // Each building degrades 0.3–0.8 condition/day naturally.
+  // Upkeep worker (Pat) repairs all buildings +condition each day he works.
+  // Treasury pays daily maintenance costs; if treasury can't afford → no repair.
+  // Building condition affects: output multiplier, revenue, tourist satisfaction.
+  // Vandalism from Zack adds extra degradation. 
+  _buildingDegradation(){
+    const b=this.s.bldg, tr=this.s.treasury;
+    const pat=this.a.find(a=>a.id==='pat'&&a.state==='working');
+    const patBonus=pat?(0.3+(pat.experience?.upkeep_worker||0)/100*0.7)*3:0; // 0.3–3 repair/day
+    const canAfford=tr.balance>100;
+    let totalMaintCost=0;
+
+    // ── Buildings ──────────────────────────────────────────────
+    const BLDG_KEYS=['hotel','airport','museum','townhall','upkeep','factory',
+                     'shop','church','park','bank','hospital','police','dock'];
+    BLDG_KEYS.forEach(k=>{
+      const bl=b[k]; if(!bl)return;
+      const base=bl.maintenanceCost||4;
+      const vandalismMult=1+(bl.vandalism||0)*0.3; // vandalism increases upkeep cost
+      const cost=Math.round(base*vandalismMult);
+      totalMaintCost+=cost;
+
+      // Degrade: natural decay + vandalism damage
+      const decay=0.4+(bl.vandalism||0)*1.5+Math.random()*0.3;
+      bl.condition=Math.max(0,Math.min(100,(bl.condition||80)-decay));
+
+      // Repair if treasury can afford
+      if(canAfford&&pat){
+        const repairAmt=patBonus*(bl.vandalism>0?1.5:1); // faster repair of vandalism
+        bl.condition=Math.min(100,(bl.condition||80)+repairAmt);
+        if(bl.vandalism>0)bl.vandalism=Math.max(0,bl.vandalism-1); // reduce vandalism over time
+      }
+
+      // Condition → output multiplier (used by exports, revenue etc.)
+      bl.condMult=Math.max(0.3, bl.condition/100); // 30%–100% of normal output
+    });
+
+    // ── Houses ─────────────────────────────────────────────────
+    Object.entries(b.houses||{}).forEach(([hid,hb])=>{
+      const cost=hb.maintenanceCost||2;
+      totalMaintCost+=cost;
+      const decay=0.2+(hb.vandalism||0)*1.0+Math.random()*0.2;
+      hb.condition=Math.max(0,Math.min(100,(hb.condition||80)-decay));
+      if(canAfford&&pat){
+        hb.condition=Math.min(100,(hb.condition||80)+patBonus*0.4);
+        if(hb.vandalism>0)hb.vandalism=Math.max(0,hb.vandalism-1);
+      }
+    });
+
+    // Charge maintenance to treasury
+    if(canAfford){
+      tr.balance-=totalMaintCost;
+      this._ledger('Building maintenance',-totalMaintCost,'spend');
+    }else{
+      // Can't afford maintenance — accelerate decay
+      BLDG_KEYS.forEach(k=>{if(b[k])b[k].condition=Math.max(0,(b[k].condition||80)-0.5);});
+      if(Math.random()<0.1)this._news('warn','Maintenance crisis','Treasury too low. Buildings deteriorating fast.');
+    }
+
+    // Apply condition to upkeep efficiency (for Tara reviews etc.)
+    b.upkeep.efficiency=Math.round(b.upkeep.condition||80);
+  }
+
+  _roadDecay(){
+    const pat=this.a.find(a=>a.id==='pat');
+    this.s.bldg.upkeep.efficiency=Math.min(100,Math.max(0,
+      this.s.bldg.upkeep.efficiency-2+(pat?.state==='working'?9:0)));
+  }
+
+  _paySalaries(){
+    const d=this.s.treasury.deficitPct;
+    const cut=d>40?.4:d>25?.65:d>10?.85:1;
+    let total=0;
+    this.a.forEach(a=>{if(!a.sal)return;const p=Math.round(a.sal*cut);a.cash+=p;total+=p;});
+    this.s.treasury.balance-=total;
+    this._ledger(`Salaries (${cut<1?Math.round(cut*100)+'%':'full'})`,-total,'spend');
+    if(cut<1){
+      this.a.forEach(a=>{if(a.sal)a.mood=Math.max(-1,a.mood-.12);});
+      this._news('warn','Salary cut',`Paid at ${Math.round(cut*100)}% due to deficit.`);
+    }
+  }
+
+  _collectTax(){
+    let tot=0;
+    this.a.forEach(a=>{
+      if(a.noTax||a.squatter)return; // thieves exempt from property tax
+      const h=HOUSES[a.houseId];
+      if(!h)return;
+      const weekly=Math.round(h.value*this.s.treasury.taxRate/52);
+      if(a.cash>=weekly){a.cash-=weekly;tot+=weekly;}
+      else{a.mood=Math.max(-1,a.mood-.08);}
+    });
+    this.s.treasury.balance+=Math.round(tot);
+    this._ledger(`House tax`,tot,'earn');
+  }
+
+  // 1) Rent: single renters pay Fay weekly
+  _collectRent(){
+    const fay=this.a.find(a=>a.id==='fay');
+    const rentMult=this.s.treasury.rentMult||1.0; // reputation-driven multiplier
+    let rentIncome=0;
+    for(const[hid,h]of Object.entries(HOUSES)){
+      if(h.rentPerWeek===0)continue;
+      h.residents.forEach(rid=>{
+        const renter=this.a.find(a=>a.id===rid);
+        if(!renter)return;
+        if(renter.noRent||renter.squatter)return; // thieves/squatters exempt
+        const rent=Math.round(h.rentPerWeek*rentMult);
+        if(renter.cash>=rent){
+          renter.cash-=rent;
+          rentIncome+=rent;
+          if(fay)fay.cash+=rent*.7;
+          this.s.treasury.balance+=Math.round(rent*.3);
+          this._ledger(`${renter.name} rent`,rent,'earn');
+        }else{
+          renter.mood=Math.max(-1,renter.mood-.1);
+          this._news('warn','Rent default',`${renter.name} cannot pay rent $${rent}.`);
+        }
+      });
+    }
+    this.s.treasury.rentIncome=rentIncome;
+  }
+
+  _shipment(){
+    if(this.s.supply.status==='blocked'){this._news('crisis','Shipment blocked','No imports.');return;}
+    const inv=this.s.inv; let cost=0;
+    // Pay airport flight cost first (dynamic, affected by crises)
+    const flightCost=this.s.bldg.airportFlightCost||50;
+    if(this.s.treasury.balance>=flightCost){
+      this.s.treasury.balance-=Math.round(flightCost);
+      cost+=flightCost;
+      this._ledger(`Airport flight fee`,-flightCost,'spend');
+    }else{
+      this._news('warn','No flight funds',`Cannot afford $${flightCost} flight. Shipment skipped.`);
+      return;
+    }
+    // Restock using current dynamic buy prices (already updated by _updateDynamicPrices)
+    const rs=(k,tgt)=>{
+      const it=inv[k];if(!it)return;
+      const n=Math.max(0,tgt-it.qty);
+      const unitCost=it.buy; // dynamic price already applied
+      if(n>0&&this.s.treasury.balance>=n*unitCost){
+        it.qty+=n; cost+=n*unitCost;
+        this.s.treasury.balance-=Math.round(n*unitCost);
+      }else if(n>0){
+        // Can only afford partial restock
+        const canAfford=Math.floor(this.s.treasury.balance/unitCost);
+        if(canAfford>0){it.qty+=canAfford;cost+=Math.round(canAfford*unitCost);this.s.treasury.balance-=Math.round(canAfford*unitCost);}
+      }
+    };
+    rs('food',Math.ceil(17*14));
+    rs('medicine',28);
+    rs('fuel',140);
+    rs('rawMat',280);
+    this.s.supply.nextDay=this.s.time.day+this.s.supply.interval;
+    const airIdx=this.s.bldg.airportPriceIndex||1;
+    const priceNote=airIdx>1.3?` ⚠ +${Math.round((airIdx-1)*100)}% surcharge`:'';
+    this._ledger(`Shipment + flight`,-Math.round(cost),'spend');
+    this._news('info','Shipment arrived',`Total $${Math.round(cost)} (flight $${flightCost}${priceNote}).`);
+  }
+
+  _sundayChurch(){
+    const att=this.a.filter(a=>a.state==='church');
+    att.forEach(a=>{a.mood=Math.min(1,a.mood+.16);});
+    this.s.prayer=Math.min(100,this.s.prayer+att.length+8);
+    this._news('info','Sunday service',`${att.length} attended. Prayer +${att.length+8}.`);
+    this._churchRedemption(); // redemption rolls for thieves/convicts
+  }
+
+  _taraReview(){
+    const tara=this.a.find(a=>a.id==='tara');if(!tara)return;
+    const m=this.s.metrics,b=this.s.bldg;
+    let sc=50;
+    // Crime safety
+    if(m.crimeRate<15)sc+=15;else if(m.crimeRate<30)sc+=8;else if(m.crimeRate>50)sc-=18;
+    // Infrastructure upkeep
+    if(b.upkeep.efficiency>80)sc+=8;else if(b.upkeep.efficiency<50)sc-=10;
+    // Park events
+    if(b.park.eventToday)sc+=10;
+    // Happiness of locals (tourists feel the vibe)
+    if(m.happiness>70)sc+=8;else if(m.happiness<50)sc-=8;
+    // Economy (prosperous islands feel better)
+    if(m.economy>70)sc+=6;else if(m.economy<40)sc-=6;
+    // Morale (friendly locals = better experience)
+    if(m.morale>65)sc+=5;else if(m.morale<40)sc-=5;
+    // No active crises = safe destination
+    if(!this.s.crises.length)sc+=5;
+    sc+=Math.round(tara.mood*12);
+    tara.satScore=Math.max(0,Math.min(100,sc));
+    // Reputation is updated gradually by _recalc reading satScore
+    // Give a nudge here so the weekly review has visible impact
+    m.reputation=Math.round(Math.max(0,Math.min(100,
+      m.reputation*0.6 + tara.satScore*0.4
+    )));
+    const stars='★'.repeat(Math.max(1,Math.ceil(tara.satScore/20)));
+    this._news(sc>65?'good':sc<40?'crisis':'info',
+      `Tara's weekly review ${stars}`,
+      `Score ${tara.satScore}/100. Island rep now ${m.reputation}.`);
+  }
+
+  // ── CAREER ELECTION (every 30 days) ─────────────────────────
+  // All unique public roles are contested. Every agent scores for each
+  // role based on personality keywords, mood, health, reputation, and
+  // tenure bonus. Wanderers get a job-seeking bonus when broke.
+  // The highest scorer takes the role; displaced incumbent becomes wanderer.
+  // Mayor is a special democratic vote — low happiness triggers snap election.
+  _careerElection(){
+    const term=Math.floor(this.s.time.day/30)+1;
+    const results=[];
+
+    // Only PUBLIC unique roles are elected every 30 days (no term limit)
+    // Private roles (factory, shop, landlord etc.) are NOT contested here
+    const publicRoles=Object.keys(CAREERS).filter(k=>CAREERS[k].unique&&CAREERS[k].public&&k!=='mayor');
+
+    publicRoles.forEach(role=>{
+      const career=CAREERS[role];
+      const incumbent=this.a.find(a=>a.role===role);
+
+      const scored=this.a.map(a=>{
+        let sc=careerFitScore(a,role);
+        if((a.role==='wanderer'||a.role==='housewife')&&a.cash<80) sc+=8;
+        sc+=Math.floor(Math.random()*6);
+        return{a,sc};
+      }).sort((x,y)=>y.sc-x.sc);
+
+      const winner=scored[0];
+      if(!winner)return;
+
+      // Incumbent keeps role unless challenger beats them by >12 pts (experience advantage already in fit score)
+      const incumbentScore=incumbent?careerFitScore(incumbent,role)+15:0;
+      if(winner.a===incumbent||winner.sc<incumbentScore+12)return;
+
+      const prevRole=winner.a.role;
+      if(incumbent){
+        incumbent.role=incumbent.g==='F'?'housewife':'wanderer';
+        incumbent.wp=null; incumbent.sal=0;
+        incumbent.mood=Math.max(-1,incumbent.mood-0.15);
+        incumbent.memory.push(`Day ${this.s.time.day}: Lost ${role} to ${winner.a.name}.`);
+        if(incumbent.memory.length>6)incumbent.memory.shift();
+      }
+      winner.a.role=role; winner.a.wp=career.wp; winner.a.sal=career.sal;
+      winner.a.mood=Math.min(1,winner.a.mood+0.2);
+      winner.a.socialCredit=Math.min(100,(winner.a.socialCredit||60)+8); // community elected them
+      winner.a.memory.push(`Day ${this.s.time.day}: Elected ${role}!`);
+      if(winner.a.memory.length>6)winner.a.memory.shift();
+      results.push(`${winner.a.name} → ${role.replace(/_/g,' ')}`);
+    });
+
+    this._mayorElection(false);
+
+    const summary=results.length?results.join(' · '):'No public role changes.';
+    this._news('info',`Term ${term} elections`,summary);
+    this.emit('career',{term,day:this.s.time.day,results});
+  }
+
+  // Mayor is elected democratically — all agents vote for best-fit candidate.
+  // If snap=true this was triggered by low happiness (< 35).
+  _mayorElection(snap){
+    const incumbent=this.a.find(a=>a.role==='mayor');
+    const career=CAREERS['mayor'];
+
+    const scored=this.a.map(a=>{
+      let sc=careerFitScore(a,'mayor');
+      // Popularity bonus: agents with high mood like cheerful candidates
+      sc+=Math.round(((a.mood+1)/2)*8);
+      sc+=Math.floor(Math.random()*10); // democratic variance
+      return{a,sc};
+    }).sort((x,y)=>y.sc-x.sc);
+
+    const winner=scored[0];
+    if(!winner||winner.a===incumbent)return;
+
+    // In snap election any challenger wins; in normal election needs +15 margin
+    const threshold=snap?0:15;
+    const incumbentScore=incumbent?careerFitScore(incumbent,'mayor')+20:0;
+    if(!snap&&winner.sc<incumbentScore+threshold)return;
+
+    const prevName=incumbent?.name||'(none)';
+    if(incumbent){
+      incumbent.role=incumbent.g==='F'?'housewife':'wanderer';
+      incumbent.wp=null; incumbent.sal=0;
+      incumbent.mood=Math.max(-1,incumbent.mood-0.25);
+      incumbent.memory.push(`Day ${this.s.time.day}: Voted out as mayor.`);
+      if(incumbent.memory.length>6)incumbent.memory.shift();
+    }
+    winner.a.role='mayor';
+    winner.a.wp=career.wp;
+    winner.a.sal=career.sal;
+    winner.a.mood=Math.min(1,winner.a.mood+0.3);
+    winner.a.socialCredit=Math.min(100,(winner.a.socialCredit||60)+12); // highest public trust
+    winner.a.memory.push(`Day ${this.s.time.day}: Elected mayor! Score ${winner.sc}.`);
+    if(winner.a.memory.length>6)winner.a.memory.shift();
+
+    const type=snap?'warn':'good';
+    const title=snap?`Snap vote: ${winner.a.name} replaces ${prevName}`:`${winner.a.name} elected mayor`;
+    const body=snap
+      ?`Happiness collapsed to ${this.s.metrics.happiness}. Island demands change.`
+      :`Score ${winner.sc}. ${prevName} steps down.`;
+    this._news(type,title,body);
+    this.emit('career',{type:'mayor',winner:winner.a.name,snap,day:this.s.time.day});
+  }
+
+  _crisisRoll(){
+    const pr=Math.min(.10,this.s.prayer*.001);
+    [...CRISES,...GOODS].forEach(ev=>{if(Math.random()<(ev.prob-pr)/30)this._applyEvent(ev);});
+    this.s.prayer=0;
+  }
+
+  _applyEvent(ev){
+    const fx=ev.fx||{},inv=this.s.inv,m=this.s.metrics;
+    if(fx.importBlocked)this.s.supply.status='blocked';
+    if(fx.importMult)this._iM*=fx.importMult;
+    if(fx.exportMult)this._eM*=fx.exportMult;
+    if(fx.tourMult)  this._tM*=fx.tourMult;
+    if(fx.moraleHit) m.morale=Math.max(0,m.morale-fx.moraleHit);
+    if(fx.moraleBonus)m.morale=Math.min(100,m.morale+fx.moraleBonus);
+    if(fx.crimeBonus)m.crimeRate=Math.min(100,m.crimeRate+fx.crimeBonus);
+    if(fx.factDrop)  this.s.bldg.factory.outputRate*=(1-fx.factDrop);
+    if(fx.foodBonus) inv.food.qty+=fx.foodBonus;
+    if(fx.medBonus)  inv.medicine.qty+=fx.medBonus;
+    if(fx.injure)    {const ag=this.a.find(a=>a.id===fx.injure);if(ag){ag.health=Math.max(.1,ag.health-.4);ag.state='hospital';}}
+    if(ev.type==='world'){
+      this.a.forEach(a=>{
+        a.mood=Math.max(-1,Math.min(1,a.mood-.10*(ev.sev||1)*(a.ns||1)));
+        a.memory.push(`Day ${this.s.time.day}: ${ev.note.title}`);
+        if(a.memory.length>6)a.memory.shift();
+      });
+    }
+    const d=Array.isArray(ev.dur)?ev.dur[0]+Math.random()*(ev.dur[1]-ev.dur[0]):(ev.dur||-1);
+    this.s.crises.push({id:ev.id,end:d===-1?-1:this.s.time.day+d});
+    this._news(ev.note.type,ev.note.title,ev.note.body);
+    this.emit('news',this.s.log[0]);
+  }
+
+  _expireCrises(){
+    this.s.crises=this.s.crises.filter(c=>c.end===-1||c.end>this.s.time.day);
+    const has=id=>this._has(id);
+    if(!has('world_war')&&!has('recession')){this._iM=1;this._eM=1;if(this.s.supply.status==='blocked')this.s.supply.status='normal';}
+    if(!has('tour_wave')&&!has('festival'))this._tM=1;
+  }
+
+  _has(id){return this.s.crises.some(c=>c.id===id&&(c.end===-1||c.end>this.s.time.day));}
+
+  // ── INTERACTION MATRIX ───────────────────────────────────────
+  // Six core metrics interact in a weighted feedback system.
+  // Each metric is computed from raw inputs PLUS cross-influence from others.
+  //
+  //  ECONOMY (EC): treasury health + workers active + export revenue
+  //    → boosts all other metrics (multiplier on morale, happiness, reputation)
+  //
+  //  MORALE (MO): avg agent mood
+  //    → work efficiency: high morale → more productive workers → more economy
+  //    → crime: low morale → more crime
+  //
+  //  HAPPINESS (HA): health + hunger + mood composite
+  //    → crime rate: unhappy population commits more crime
+  //    → tourism: tourists prefer happy islands
+  //    → morale: happiness feeds back into morale
+  //
+  //  REPUTATION (RE): social credit score (Tara + history)
+  //    → trading fee: high rep → lower FEE (already in autoTrade)
+  //    → import prices: high rep → better deals
+  //    → rent premium: high rep → Fay charges more (or less crime discount)
+  //    → tourism: high rep = island worth visiting
+  //
+  //  CRIME (CR): agent criminality × happiness deficit
+  //    → reduces happiness, reputation, tourism
+  //    → increases import prices (unsafe island = higher insurance)
+  //
+  //  TOURISTS (TU): output of the system — all other metrics combine
+  //    → revenue feedback into economy
+  //
+  // WEIGHT MATRIX W[effect][cause] = how much cause shifts effect (0–1):
+  //         EC    MO    HA    RE    CR
+  // EC:    [1.00, 0.20, 0.15, 0.10, -0.15]
+  // MO:    [0.25, 1.00, 0.30, 0.05, -0.10]
+  // HA:    [0.20, 0.35, 1.00, 0.05, -0.25]
+  // RE:    [0.15, 0.05, 0.10, 1.00, -0.20]
+  // CR:    [-0.10,-0.20,-0.35,-0.15, 1.00]
+  // TU:    [0.25, 0.15, 0.30, 0.25, -0.30] (tourists = all combined)
+  _recalc(){
+    const m=this.s.metrics, tr=this.s.treasury;
+
+    // ── RAW INPUTS (0–100 scale) ──────────────────────────────
+    const wk=this.a.filter(a=>a.state==='working').length;
+    const agents=this.a.length||1;
+    const avgMood=this.a.reduce((s,a)=>s+a.mood,0)/agents; // -1..1
+    const avgHealth=this.a.reduce((s,a)=>s+a.health,0)/agents; // 0..1
+    const avgHunger=this.a.reduce((s,a)=>s+a.needs.hunger,0)/agents; // 0..1 (higher=worse)
+    const avgCrimProb=this.a.reduce((s,a)=>s+(a.crimProb||0),0)/agents;
+
+    // Raw economy: treasury + workers + solvency
+    const rawEC=Math.round(
+      Math.min(1,tr.balance/4000)*40 +
+      (wk/agents)*35 +
+      Math.max(0,1-tr.deficitPct/100)*25
+    );
+    // Raw morale: avg mood mapped 0–100
+    const rawMO=Math.round(Math.max(0,Math.min(100,50+avgMood*50)));
+    // Raw happiness: health + satiety + mood
+    const rawHA=Math.round((avgHealth*0.45 + (1-avgHunger)*0.35 + (avgMood+1)/2*0.20)*100);
+    // Raw reputation: sticky social credit (Tara reviews nudge it weekly)
+    // Also pulled slightly toward Tara's current satisfaction score
+    const tara=this.a.find(a=>a.id==='tara');
+    const taraInfluence=tara?.satScore!=null?tara.satScore:m.reputation;
+    const rawRE=Math.max(0,Math.min(100, m.reputation*0.97 + taraInfluence*0.03));
+    // Raw crime: avg criminal probability 0–100
+    const rawCR=Math.min(100,Math.round(avgCrimProb*100));
+
+    // ── CROSS-INFLUENCE (matrix pass) ─────────────────────────
+    // Normalise each metric to 0..1, apply weights, add delta to raw value.
+    const ec0=rawEC/100, mo0=rawMO/100, ha0=rawHA/100, re0=rawRE/100, cr0=rawCR/100;
+
+    // Economy is influenced by morale (workers produce more) and reputation (trade deals)
+    const ecDelta = 0.20*(mo0-0.5) + 0.10*(re0-0.5) + 0.15*(ha0-0.5) - 0.15*(cr0-0.3);
+    // Morale is pulled by economy (jobs, security) and happiness, hurt by crime
+    const moDelta = 0.25*(ec0-0.5) + 0.30*(ha0-0.5) - 0.10*(cr0-0.3);
+    // Happiness is driven by economy (wealth), morale, crushed by crime
+    const haDelta = 0.20*(ec0-0.5) + 0.35*(mo0-0.5) - 0.25*(cr0-0.3) + 0.05*(re0-0.5);
+    // Reputation improves with happiness and economy, falls with crime
+    const reDelta = 0.15*(ec0-0.5) + 0.10*(ha0-0.5) - 0.20*(cr0-0.3);
+    // Crime falls when happy, employed, high rep; rises with desperation
+    const crDelta = -0.35*(ha0-0.5) - 0.10*(ec0-0.5) - 0.15*(re0-0.5) - 0.20*(mo0-0.5);
+
+    // Apply deltas (scaled to ±15 pts max per tick to avoid explosion)
+    const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+    const scale=15;
+    m.economy   =Math.round(clamp(rawEC + ecDelta*scale, 0, 100));
+    m.morale    =Math.round(clamp(rawMO + moDelta*scale, 0, 100));
+    m.happiness =Math.round(clamp(rawHA + haDelta*scale, 0, 100));
+    m.crimeRate =Math.round(clamp(rawCR + crDelta*scale, 0, 100));
+    // Reputation drifts slowly (sticky social credit) — max ±3 per recalc
+    const repShift=clamp(reDelta*6, -3, 3);
+    m.reputation=Math.round(clamp(m.reputation+repShift, 0, 100));
+
+    // ── MORALE → WORK EFFICIENCY (productivity multiplier) ────
+    // morale 100 → 1.30×, morale 50 → 1.00×, morale 0 → 0.55×
+    this.s.bldg.factory.outputRate=clamp(0.55+0.75*(m.morale/100), 0.55, 1.30);
+
+    // ── REPUTATION → RENT ADJUSTMENT ─────────────────────────
+    // High rep = landlords charge more (desirable island); low rep = discount
+    // Applied as a multiplier stored on treasury so _collectRent can use it
+    tr.rentMult=clamp(0.7+(re0*0.6), 0.7, 1.3);
+
+    // ── HAPPINESS → CRIME (direct feedback via crimProb) ──────
+    // Already captured above; also apply soft clamp
+    m.crimeRate=Math.round(clamp(m.crimeRate, 0, 100));
+
+    // ── TOURISTS: all-factors output ──────────────────────────
+    // Weights: economy 25%, morale 15%, happiness 30%, reputation 25%, crime -30%
+    // tara already declared above for reputation input
+    const ts=(tara?.satScore||65)/100;
+    const crP=clamp(1-m.crimeRate/100, 0, 1);
+    const tBase=3*(
+      0.25*ec0 + 0.15*mo0 + 0.30*(m.happiness/100) + 0.25*(m.reputation/100) + 0.05
+    )*crP*ts;
+    const crisisBlock=this.s.supply.status==='blocked'||this._has('pandemic');
+    m.tourists=crisisBlock?0:Math.max(0,Math.floor(tBase*8*this._tM));
+
+    // ── INCOME/EXPENSE estimate ────────────────────────────────
+    const dailySalary=this.a.reduce((s,a)=>s+(a.sal||0),0)/7;
+    tr.income =Math.round(m.tourists*40 + 200 + (tr.rentIncome||0)/7);
+    tr.expense=Math.round(dailySalary + 120);
+    tr.deficitPct=tr.expense>0?Math.max(0,(tr.expense-tr.income)/tr.expense*100):0;
+
+    // Store deltas for chip arrows in HUD
+    this.s.deltas={
+      economy:   m.economy   - (this.s._prev?.economy  ||m.economy),
+      morale:    m.morale    - (this.s._prev?.morale   ||m.morale),
+      happiness: m.happiness - (this.s._prev?.happiness||m.happiness),
+      reputation:m.reputation- (this.s._prev?.reputation||m.reputation),
+      crimeRate: m.crimeRate - (this.s._prev?.crimeRate||m.crimeRate),
+      tourists:  m.tourists  - (this.s._prev?.tourists ||m.tourists),
+      treasury:  tr.balance  - (this.s._prev?.balance  ||tr.balance),
+    };
+    this.s._prev={...m, balance:tr.balance};
+  }
+
+  _checkGO(){
+    if(this.s.treasury.balance<0&&this.s.treasury.deficitPct>50)this.emit('gameover',{reason:'deficit',day:this.s.time.day});
+    if(this.a.filter(a=>a.health<=0).length/this.a.length>=.3)this.emit('gameover',{reason:'population',day:this.s.time.day});
+  }
+
+  // ── AGENT PERSONAL FINANCE ───────────────────────────────────
+  // Runs daily: track negative cash, trigger survival behaviours
+  _agentFinanceDaily(){
+    const inv=this.s.inv;
+    this.a.forEach(a=>{
+      // Detention daily countdown
+      if(a.detained){
+        a.detainedDays=Math.max(0,(a.detainedDays||0)-1);
+        if(a.detainedDays<=0){
+          a.detained=false;
+          a.state='sleeping';
+          // Thieves return to dock area; regular detainees go home
+          const dest=a.isThief?this._thiefSleepCell(a):(a.houseCell||{col:0,row:0});
+          a.destination=dest;
+          if(a.isThief){
+            // Thieves stay thieves after serving time — crime is their livelihood
+            a.memory.push(`Day ${this.s.time.day}: Sentence done. Back near the dock.`);
+          }else{
+            a.isThief=false; // non-thief detainees get a clean slate
+            a.memory.push(`Day ${this.s.time.day}: Released from custody. Sentence served.`);
+          }
+          if(a.memory.length>8)a.memory.shift();
+          this._news('info',`${a.name} released`,`Sentence complete. Credit: ${a.socialCredit||0}.`);
+        }
+        return; // detained agents don't do finance
+      }
+
+      if(a.bankrupt)return;
+      if(a.squatter||a.noTax)return; // off-grid thieves manage themselves
+      if(a.cash<0){
+        a.debtDays=(a.debtDays||0)+1;
+        a.mood=Math.max(-1,a.mood-0.08);
+      }else{
+        a.debtDays=0;
+      }
+
+      // Bankruptcy: 7+ days with cash < 0 and no loan room
+      if(a.debtDays>=7&&a.loan>=(a.sal||0)*8){
+        a.bankrupt=true;
+        a.cash=0; a.sav=0; a.loan=0;
+        a.mood=-0.8; a.socialCredit=Math.max(0,a.socialCredit-30);
+        a.role=a.g==='F'?'housewife':'wanderer';
+        a.wp=null; a.sal=0;
+        a.memory.push(`Day ${this.s.time.day}: Declared bankrupt. Lost job, all savings.`);
+        if(a.memory.length>6)a.memory.shift();
+        this._news('warn',`${a.name} bankrupt`,`Debt spiral. Lost role. Now ${a.role}.`);
+        return;
+      }
+
+      // Survival sell: if cash < 15 and has savings, withdraw from savings
+      if(a.cash<15&&a.sav>0){
+        const draw=Math.min(a.sav, 50);
+        a.sav-=draw; a.cash+=draw; a.sav=Math.round(a.sav); a.cash=Math.round(a.cash);
+        this._ledger(`${a.name} withdrew savings`,-draw,'spend');
+      }
+
+      // Survival sell: if cash still low, sell alcohol or raw goods at discount
+      if(a.cash<10&&inv.alcohol?.qty>0){
+        const price=Math.round((inv.alcohol.sell||14)*0.7);
+        inv.alcohol.qty=Math.max(0,inv.alcohol.qty-1);
+        a.cash+=Math.round(price);
+        this._ledger(`${a.name} sold alcohol for cash`,price,'earn');
+      }
+
+      // Opportunistic saving: if cash > 150 and salary-earning, save 20%
+      if(a.cash>150&&a.sal>0&&Math.random()<0.3){
+        const save=Math.round(a.cash*0.15);
+        a.cash-=save; a.sav=(a.sav||0)+save;
+      }
+    });
+  }
+
+  // Runs weekly (Monday): loan repayments, interest, job-seeking, bank loans
+  _agentFinanceWeekly(){
+    const bldg=this.s.bldg;
+    this.a.forEach(a=>{
+      if(a.bankrupt)return;
+
+      // Repay loan if has one
+      if(a.loan>0&&a.loanWeekly>0){
+        const payment=Math.min(a.loanWeekly, a.loan);
+        if(a.cash>=payment){
+          a.cash-=payment; a.loan-=payment;
+          bldg.bank.loanBook=Math.max(0,(bldg.bank.loanBook||0)-payment);
+          const interest=Math.round(a.loan*0.0019);
+          bldg.bank.interestEarned=(bldg.bank.interestEarned||0)+interest;
+          this.s.treasury.balance+=Math.round(interest);
+          if(a.loan<=0){
+            a.loan=0;a.loanWeekly=0;
+            a.socialCredit=Math.min(100,(a.socialCredit||60)+5); // repaid → credit improves
+            a.memory.push(`Day ${this.s.time.day}: Loan fully repaid! Credit +5.`);
+          }
+        }else{
+          // Can't repay — increase debt
+          const missed=payment-a.cash;
+          a.cash=0; a.loan+=Math.round(missed*1.05);
+          a.mood=Math.max(-1,a.mood-0.1);
+          a.socialCredit=Math.max(0,(a.socialCredit||60)-8); // default → credit damaged
+        }
+      }
+
+      // Low cash threshold (25th percentile ≈ $50): seek loan or better job
+      const lowThreshold=50;
+      if(a.cash<lowThreshold&&!a.bankrupt){
+        // Try bank loan if no existing loan and bank is open
+        if(a.loan===0&&bldg.bank.open){
+          const sc=a.socialCredit||60;
+          const maxLoan=sc>=40?Math.max(0,(a.sal||0)*4):0; // refused if credit < 40
+          if(maxLoan>20){
+            const loanAmt=Math.min(maxLoan, 200);
+            a.cash+=Math.round(loanAmt);
+            a.loan=Math.round(loanAmt);
+            a.loanWeekly=Math.round(loanAmt/8); // repay over 8 weeks
+            bldg.bank.loanBook=(bldg.bank.loanBook||0)+loanAmt;
+            this.s.treasury.balance-=Math.round(loanAmt*0.8); // bank fronts 80% from treasury
+            a.memory.push(`Day ${this.s.time.day}: Took $${loanAmt} loan from bank.`);
+            if(a.memory.length>6)a.memory.shift();
+            this._news('info',`${a.name} bank loan`,`Borrowed $${loanAmt}. Repay $${a.loanWeekly}/wk.`);
+          }
+        }
+
+        // Seek better-paying PRIVATE job if wanderer/housewife
+        // (public roles are elected — cannot be taken directly)
+        if(a.role==='wanderer'||a.role==='housewife'){
+          const privateOpen=Object.entries(CAREERS)
+            .filter(([k,c])=>{
+              if(c.public||!c.sal)return false; // skip public roles
+              if(c.unique&&this.a.some(x=>x.id!==a.id&&x.role===k))return false; // unique and taken
+              return true;
+            })
+            .map(([k,c])=>({k,c,fit:careerFitScore(a,k)}))
+            .sort((x,y)=>y.fit-x.fit)[0]; // best fit
+
+          if(privateOpen){
+            const{k:rk,c:rc}=privateOpen;
+            const exp=(a.experience&&a.experience[rk])||0;
+            a.role=rk; a.wp=rc.wp; a.sal=rc.sal;
+            a.mood=Math.min(1,a.mood+0.12);
+            const expNote=exp<rc.minExp?` (low exp: ${exp}/${rc.minExp}d, output penalised)`:'';
+            a.memory.push(`Day ${this.s.time.day}: Started ${rk}${expNote}.`);
+            if(a.memory.length>6)a.memory.shift();
+            this._news('info',`${a.name} hired`,`${rk.replace(/_/g,' ')} — exp ${exp}d${expNote}`);
+          }
+        }
+
+        // Buy food at shop if starving and cash allows
+        if(a.needs.hunger>0.7&&a.cash>5&&this.s.inv.food?.qty>0){
+          const price=this.s.inv.food.sell||5;
+          if(a.cash>=price){
+            a.cash-=price; a.needs.hunger=Math.max(0,a.needs.hunger-0.6);
+            this.s.inv.food.qty=Math.max(0,this.s.inv.food.qty-1);
+          }
+        }
+      }
+    });
+  }
+
+  // ── FUTURES INDEX (world economy) ────────────────────────────
+  // Daily seeded random walk. Seed = real date (YYYYMMDD) so same calendar
+  // day always produces same base trend. Island metrics tilt the walk.
+  _updateFutures(){
+    const f=this.s.futures;
+    const t=this.s.time;
+    // Seed: combine real date + sim day for deterministic-per-calendar-day variation
+    const now=new Date();
+    const dateSeed=now.getFullYear()*10000+(now.getMonth()+1)*100+now.getDate();
+    // Simple seeded LCG for reproducible but varied daily moves
+    const lcg=(s)=>(((s*1664525+1013904223)>>>0)/4294967296);
+    const r1=lcg(dateSeed+t.day*7);
+    const r2=lcg(dateSeed+t.day*13+1);
+    // Base random move: ±2% daily, biased by island economy
+    const m=this.s.metrics;
+    const islandBias=(m.economy-50)/100*0.008; // island health nudges world index slightly
+    const crisisBias=this.s.crises.length*-0.005;
+    const move=(r1-0.5)*0.04 + islandBias + crisisBias + (r2-0.5)*0.01;
+    f.prev=f.value;
+    f.value=Math.max(200, Math.round(f.value*(1+move)*100)/100);
+    f.change=Math.round((f.value-f.prev)*100)/100;
+    f.changePct=Math.round(move*10000)/100;
+    f.history.push(f.value);
+    if(f.history.length>14)f.history.shift();
+    // Multiplier: index deviation from 1000 affects all prices by ±15%
+    f.multiplier=Math.max(0.85,Math.min(1.15, f.value/1000));
+    // Apply to dynamic price multipliers
+    this._eM=Math.max(0.5,(this._eM||1)*0.9+f.multiplier*0.1);
+    this.emit('futures',f);
+  }
+
+  // ── COMMUNITY RANDOM EVENTS (weekly) ─────────────────────────
+  _weeklyCommEvents(){
+    const day=this.s.time.day;
+    // Roll 1–2 negative events
+    const negPool=COMMUNITY_NEG.filter(e=>!e.cond||this.a.some(a=>e.cond(a)));
+    const totalNegW=negPool.reduce((s,e)=>s+e.w,0);
+    for(let i=0;i<2;i++){
+      if(Math.random()>0.55)continue; // ~55% chance each slot fires
+      let r=Math.random()*totalNegW,pick=null;
+      for(const e of negPool){r-=e.w;if(r<=0){pick=e;break;}}
+      if(!pick)continue;
+      // Pick a random eligible agent
+      const eligible=pick.cond?this.a.filter(a=>pick.cond(a)):this.a.filter(a=>!a.bankrupt);
+      if(!eligible.length)continue;
+      const agent=eligible[Math.floor(Math.random()*eligible.length)];
+      pick.fx(agent,this.s);
+      const bodyStr=pick.body(agent);
+      agent.memory.push(`Day ${day}: ${pick.title} — ${bodyStr}`);
+      if(agent.memory.length>8)agent.memory.shift();
+      this._news('warn',pick.title,bodyStr);
+    }
+    // Roll 0–1 positive events
+    const posPool=COMMUNITY_POS;
+    const totalPosW=posPool.reduce((s,e)=>s+e.w,0);
+    if(Math.random()<0.4){ // 40% chance a good thing happens
+      let r=Math.random()*totalPosW,pick=null;
+      for(const e of posPool){r-=e.w;if(r<=0){pick=e;break;}}
+      if(pick){
+        const needsAgent=['windfall','promotion'].includes(pick.id);
+        const agent=needsAgent?this.a[Math.floor(Math.random()*this.a.length)]:null;
+        pick.fx(agent||null,this.s);
+        const bodyStr=pick.body(agent);
+        this._news('good',pick.title,bodyStr);
+      }
+    }
+  }
+
+  // ── MAYOR TAX ADJUSTMENT (weekly, automatic) ──────────────────
+  // Mayor raises tax when deficit > 20%, lowers when surplus > 40%.
+  // Bounded 5%–25%. News alert when it changes.
+  _mayorTaxAdjust(){
+    const tr=this.s.treasury, m=this.s.metrics;
+    const oldRate=tr.taxRate;
+    let newRate=oldRate;
+    if(tr.deficitPct>30&&m.economy<50)      newRate=Math.min(0.25,oldRate+0.01);
+    else if(tr.deficitPct>20)               newRate=Math.min(0.25,oldRate+0.005);
+    else if(tr.deficitPct<5&&tr.balance>2000)newRate=Math.max(0.05,oldRate-0.01);
+    else if(tr.balance>3500)                newRate=Math.max(0.05,oldRate-0.005);
+    newRate=Math.round(newRate*1000)/1000;
+    if(newRate!==oldRate){
+      tr.taxRate=newRate;
+      const dir=newRate>oldRate?'raised':'lowered';
+      this._news(newRate>oldRate?'warn':'good',
+        `Mayor ${dir} tax to ${Math.round(newRate*100)}%`,
+        `Deficit ${Math.round(tr.deficitPct)}% · Balance $${Math.round(tr.balance)} · Economy ${m.economy}`);
+      this.emit('taxChange',{rate:newRate,prev:oldRate});
+    }
+  }
+
+  // ── WEEKLY SUMMARY ────────────────────────────────────────────
+  _buildWeeklySummary(){
+    const t=this.s.time, m=this.s.metrics, tr=this.s.treasury;
+    const f=this.s.futures;
+    const mayor=this.a.find(a=>a.role==='mayor');
+    const bankrupt=this.a.filter(a=>a.bankrupt).length;
+    const employed=this.a.filter(a=>a.sal>0).length;
+    this.s.weeklySummary={
+      week:t.week, day:t.day,
+      economy:m.economy, morale:m.morale, happiness:m.happiness,
+      reputation:m.reputation, crime:m.crimeRate, tourists:m.tourists,
+      balance:Math.round(tr.balance), deficit:Math.round(tr.deficitPct),
+      taxRate:Math.round(tr.taxRate*100),
+      futuresVal:Math.round(f.value), futuresPct:f.changePct,
+      employed, bankrupt,
+      mayor:mayor?.name||'—',
+      crises:this.s.crises.map(c=>c.id.replace(/_/g,' ')).join(', ')||'none',
+      events:[], // filled by community events that week
+    };
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // CRIMINAL SYSTEM
+  // ══════════════════════════════════════════════════════════════
+  // Thief lifecycle:
+  //  1. Agent becomes thief when: socialCredit<25 AND cash<0 AND (homeless OR bankrupt)
+  //  2. Thieves operate mainly at night (21:00–05:00), targeting buildings or agents
+  //  3. Detection probability = 1 - (thieveryExp/100) * 0.8  (skill reduces risk)
+  //  4. Police patrols road tiles; if same tile as thief → roll detection
+  //  5. Caught → detained at police station, social credit −40, rep news
+  //  6. Detained for 3–7 days, released with low credit
+  //  7. If at church during Sunday service → redemption roll, credit restored
+  //  8. Successful steals > 5 island-wide → crimeRate up, reputation down
+
+  // Called every hourTick at night hours
+  _thiefTick(){
+    const t=this.s.time, h=Math.floor(t.hour);
+    const isNight=h>=21||h<5;
+    const inv=this.s.inv, m=this.s.metrics;
+
+    this.a.forEach(a=>{
+      // ── DETENTION countdown ──────────────────────────────────
+      if(a.detained){
+        a.detainedDays=(a.detainedDays||0);
+        // Release check happens at 06:00
+        if(h===6&&Math.random()<0.15){
+          a.detained=false;
+          a.state='sleeping';
+          a.destination=a.houseCell;
+          a.memory.push(`Day ${t.day}: Released from custody.`);
+          if(a.memory.length>8)a.memory.shift();
+          this._news('info',`${a.name} released`,`Served time. Social credit: ${a.socialCredit}.`);
+        }
+        return; // detained agents don't move/act
+      }
+
+      // ── THIEF ACTIVATION ───────────────────────────────────
+      if(!a.isThief&&!a.detained){
+        const creditThreshold=25;
+        const shouldTurn=
+          (a.socialCredit||60)<creditThreshold &&
+          a.cash<0 &&
+          (a.bankrupt||a.role==='wanderer'||a.role==='housewife') &&
+          Math.random()<0.08; // 8% chance per hour when conditions met
+        if(shouldTurn){
+          a.isThief=true;
+          a.role='wanderer'; a.wp=null; a.sal=0;
+          a.memory.push(`Day ${t.day}: Turned to theft. Nothing left to lose.`);
+          if(a.memory.length>8)a.memory.shift();
+          this._news('warn',`${a.name} turned thief`,`Low credit (${a.socialCredit||60}), broke, desperate.`);
+        }
+      }
+
+      // ── THIEF BEHAVIOUR ────────────────────────────────────
+      if(!a.isThief)return;
+
+      // Thieves sleep normally, only operate at night or quiet daytime
+      if(!isNight&&Math.random()>0.05)return; // 5% chance daytime opportunistic steal
+
+      // Choose a target: building or agent
+      if(Math.random()<0.6){
+        this._thiefRobBuilding(a,t);
+      } else {
+        this._thiefRobAgent(a,m,t);
+      }
+    });
+  }
+
+  _thiefTick(){
+    const t=this.s.time, h=Math.floor(t.hour);
+    const isNight=h>=21||h<6;
+    const isDaySleep=h>=6&&h<18; // thieves rest during day
+    const inv=this.s.inv, m=this.s.metrics;
+
+    this.a.forEach(a=>{
+      // ── DETENTION countdown ──────────────────────────────────
+      if(a.detained){
+        // Fix 4: Escape attempt — probability based on thievery experience
+        // Only active thieves with exp > 40 attempt escape; harder to escape well-guarded cells
+        const isThiefDetained=a.isThief||a.thieveryExp>0;
+        if(isThiefDetained&&isNight){
+          const escapeProb=Math.max(0, (a.thieveryExp||0)/100*0.12); // 0–12%/hour at night
+          if(Math.random()<escapeProb){
+            a.detained=false;
+            a.thieveryExp=Math.min(100,(a.thieveryExp||0)+3); // escape = skill boost
+            const sleepCell=this._thiefSleepCell(a);
+            a.state='sleeping'; a.destination=sleepCell;
+            a.path=bfsPath(a.pos.col,a.pos.row,sleepCell.col,sleepCell.row); a.pathStep=0;
+            a.memory.push(`Day ${t.day}: Escaped from custody at night. They'll never find me near the dock.`);
+            if(a.memory.length>8)a.memory.shift();
+            // Police lose reputation — escape embarrasses them
+            this.s.metrics.reputation=Math.max(0,this.s.metrics.reputation-2);
+            this.s.metrics.crimeRate=Math.min(100,this.s.metrics.crimeRate+3);
+            const police=this.a.find(x=>x.role==='police');
+            if(police){police.mood=Math.max(-1,police.mood-0.2);police.memory.push(`Day ${t.day}: ${a.name} escaped custody!`);}
+            this._news('warn',`${a.name} escaped!`,`Broke out overnight. Thievery exp +3. Police reputation −2.`);
+            return;
+          }
+        }
+        // Normal release at 06:00
+        if(h===6&&Math.random()<0.15){
+          a.detained=false;
+          a.state='sleeping';
+          a.destination=this._thiefSleepCell(a);
+          a.memory.push(`Day ${t.day}: Released from custody.`);
+          if(a.memory.length>8)a.memory.shift();
+          this._news('info',`${a.name} released`,`Served time. Credit: ${a.socialCredit}.`);
+        }
+        return;
+      }
+
+      // ── SQUATTER: find a vacancy to sleep during the day ─────
+      if(a.isThief&&isDaySleep&&(a.state==='stealing'||a.state==='wandering'||!a.squatterCell)){
+        const cell=this._thiefSleepCell(a);
+        a.squatterCell=cell;
+        a.state='sleeping';
+        if(a.destination?.col!==cell.col||a.destination?.row!==cell.row){
+          a.destination=cell;
+          a.path=bfsPath(a.pos.col,a.pos.row,cell.col,cell.row);
+          a.pathStep=0;
+        }
+        return;
+      }
+
+      // ── THIEF ACTIVATION (organic — broke wanderers) ─────────
+      if(!a.isThief&&!a.detained){
+        const shouldTurn=
+          (a.socialCredit||60)<25 && a.cash<0 &&
+          (a.bankrupt||a.role==='wanderer'||a.role==='housewife') &&
+          Math.random()<0.08;
+        if(shouldTurn){
+          a.isThief=true; a.role='wanderer'; a.wp=null; a.sal=0;
+          a.noRent=true; a.noTax=true; a.squatter=true;
+          a.memory.push(`Day ${t.day}: Turned to theft. Nothing left to lose.`);
+          if(a.memory.length>8)a.memory.shift();
+          this._news('warn',`${a.name} turned thief`,`Credit ${a.socialCredit||60}, broke, desperate.`);
+        }
+      }
+
+      if(!a.isThief)return;
+      if(!isNight)return; // only operate at night
+
+      a.state='stealing';
+
+      // ── CHOOSE TARGET ────────────────────────────────────────
+      // Experienced thieves prefer high-value buildings. Less exp = random.
+      const roll=Math.random();
+      if(roll<0.45){
+        this._thiefRobBuilding(a,t);
+      } else if(roll<0.75){
+        this._thiefRobResident(a,t);
+      } else {
+        this._thiefRobTreasury(a,t);
+      }
+    });
+  }
+
+  // Find a vacant house cell or any unoccupied house cell for squatting
+  _thiefSleepCell(thief){
+    // Fix 3: Zack always prefers houses CLOSEST TO DOCK (row 7, highest col = nearest col 7)
+    // Dock is at col:7,row:7 — so H15(col6,row7) and H13-H15 area are preferred
+    const agentPositions=new Set(
+      this.a.filter(a=>a.id!==thief.id&&!a.detained)
+             .map(a=>`${a.pos.col},${a.pos.row}`)
+    );
+    const houseList=Object.values(HOUSES)
+      .map(h=>({
+        col:h.col, row:h.row,
+        officiallyVacant:h.residents.length===0||(h.residents.length===1&&h.residents[0]===thief.id),
+        agentPresent:agentPositions.has(`${h.col},${h.row}`),
+        dockDist:Math.abs(h.col-7)+Math.abs(h.row-7), // distance from dock (col7,row7)
+      }))
+      .filter(h=>!h.agentPresent) // must be empty right now
+      .sort((a,b)=>{
+        // Primary: prefer south row (row 7 = closer to dock)
+        const rowA=a.row===7?0:5;
+        const rowB=b.row===7?0:5;
+        // Secondary: closest to dock by column
+        return (rowA+a.dockDist+(a.officiallyVacant?0:8))-(rowB+b.dockDist+(b.officiallyVacant?0:8));
+      });
+    if(houseList.length) return{col:houseList[0].col,row:houseList[0].row};
+    return{col:6,row:6}; // fallback road near dock
+  }
+
+  _thiefRobBuilding(thief, t){
+    const m=this.s.metrics, inv=this.s.inv, b=this.s.bldg;
+    const allBuildings=[];
+    for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+      const ct=MAP[r][c];
+      if(ct&&ct!=='road'&&ct!=='house'&&ct!=='dock')allBuildings.push({col:c,row:r,type:ct});
+    }
+    const agentPos=new Set(this.a.filter(a=>a.id!==thief.id&&!a.detained).map(a=>`${a.pos.col},${a.pos.row}`));
+    const empty=allBuildings.filter(bl=>!agentPos.has(`${bl.col},${bl.row}`));
+    if(!empty.length)return;
+
+    // Guardian experience per building — even when absent, experienced guardians
+    // leave better locks/alarms. Police exp most powerful, bank second.
+    const guardianExp=(type)=>{
+      const guardRoles={bank:'banker',police:'police',hospital:'doctor',
+                        factory:'factory_mgr',shop:'shopkeeper',airport:'airport_master',
+                        townhall:'mayor',museum:'mayor',hotel:'landlord',church:'priest'};
+      const role=guardRoles[type];
+      const guardian=role?this.a.find(a=>a.role===role):null;
+      return guardian?(guardian.experience?.[role]||0):0;
+    };
+
+    // Personality vigilance: strict/order/law personalities = harder to steal from
+    const guardianVigilance=(type)=>{
+      const guardRoles={bank:'banker',police:'police',hospital:'doctor',factory:'factory_mgr',shop:'shopkeeper'};
+      const role=guardRoles[type];
+      const guardian=role?this.a.find(a=>a.role===role):null;
+      if(!guardian)return 0;
+      const per=guardian.per.toLowerCase();
+      return [/strict/,/idealist/,/cautious/,/law/,/order/,/justice/,/risk-averse/]
+        .filter(rx=>rx.test(per)).length * 5; // 0–35 pts
+    };
+
+    // Weight — experience-gated: Zack won't bother with bank until exp > 50
+    const baseWeights={bank:1,hotel:3,museum:2,shop:4,factory:3,airport:2,upkeep:1,church:1,park:1,hospital:2,police:0.3,townhall:2};
+    const weights=empty.map(bl=>({
+      ...bl,
+      w:(baseWeights[bl.type]||1)*(
+          bl.type==='bank'?(thief.thieveryExp>70?3:thief.thieveryExp>50?1:0.2):
+          bl.type==='police'?(thief.thieveryExp>80?1:0.1):1
+        )
+    }));
+    const total=weights.reduce((s,b)=>s+b.w,0);
+    let rv=Math.random()*total,target=weights[0];
+    for(const bl of weights){rv-=bl.w;if(rv<=0){target=bl;break;}}
+
+    const tKey=`${target.col},${target.row}`;
+    if(thief._lastTarget!==tKey){
+      thief.path=bfsPath(thief.pos.col,thief.pos.row,target.col,target.row);
+      thief.pathStep=0; thief._lastTarget=tKey;
+    }
+    thief.destination={col:target.col,row:target.row};
+    if(Math.abs(thief.pos.col-target.col)+Math.abs(thief.pos.row-target.row)>1)return;
+    if(agentPos.has(tKey)){thief.path=[];thief._lastTarget=null;return;}
+
+    // ── DETECTION: thieveryExp vs guardian experience + personality vigilance ──
+    // Base risk purely from thief skill (higher exp = lower base risk)
+    const thiefSkill=thief.thieveryExp/100; // 0–1
+    const gExp=guardianExp(target.type);
+    const gVig=guardianVigilance(target.type);
+    // Guardian security quality: experience × 0.003 (up to 0.30) + vigilance/100 (up to 0.35)
+    const guardSecurity=Math.min(0.65, gExp*0.003 + gVig/100);
+    // Building hardness modifier
+    const hardness={bank:0.30,police:0.35,hospital:0.10,factory:0.08,
+                    airport:0.10,townhall:0.12,museum:0.05,hotel:0.05,
+                    shop:0.02,church:0.01,park:0.00,upkeep:0.00}[target.type]||0.05;
+    // detectProb = base(1-thiefSkill×0.75) + guardSecurity + hardness
+    const detectProb=Math.max(0.03,Math.min(0.97,
+      (1-thiefSkill*0.75)*0.55 + guardSecurity + hardness
+    ));
+    const detected=Math.random()<detectProb;
+
+    if(!detected){
+      let cashGain=0, newsDetail='';
+      const bldgState=b[target.type];
+
+      switch(target.type){
+        case 'bank':{
+          // Loot scales with actual treasury balance — richer island = bigger heist
+          const maxLoot=Math.min(this.s.treasury.balance*0.15, 300);
+          const loot=Math.round(maxLoot*(0.4+thiefSkill*0.6)*(0.7+Math.random()*0.5));
+          this.s.treasury.balance=Math.max(0,this.s.treasury.balance-loot);
+          cashGain=loot; newsDetail=`$${loot} from bank vault (treasury was $${Math.round(this.s.treasury.balance+loot)})`;
+          if(bldgState){bldgState.vandalism=(bldgState.vandalism||0)+3;bldgState.condition=Math.max(0,bldgState.condition-10);}
+          this._news('warn','Bank break-in!',`$${loot} stolen. Ken's security failed. Treasury hit.`);
+          break;}
+        case 'shop':{
+          // Loot scales with current stock value
+          const foodSteal=Math.min(inv.food?.qty||0,Math.round((2+thiefSkill*8)));
+          const alcSteal=Math.min(inv.alcohol?.qty||0,Math.round(thiefSkill*3));
+          if(inv.food)inv.food.qty=Math.max(0,inv.food.qty-foodSteal);
+          if(inv.alcohol)inv.alcohol.qty=Math.max(0,inv.alcohol.qty-alcSteal);
+          cashGain=Math.round(foodSteal*(inv.food?.sell||5)+alcSteal*(inv.alcohol?.sell||14));
+          if(foodSteal>0)(thief.stolenGoods=thief.stolenGoods||[]).push({type:'food',qty:foodSteal,val:inv.food?.sell||5});
+          if(alcSteal>0)(thief.stolenGoods=thief.stolenGoods||[]).push({type:'alcohol',qty:alcSteal,val:inv.alcohol?.sell||14});
+          newsDetail=`${foodSteal}u food + ${alcSteal}u alcohol (worth $${cashGain})`;
+          if(bldgState){bldgState.vandalism=(bldgState.vandalism||0)+1;bldgState.condition=Math.max(0,bldgState.condition-4);}
+          break;}
+        case 'factory':{
+          const matSteal=Math.min(inv.rawMat?.qty||0,Math.round(3+thiefSkill*15));
+          if(inv.rawMat)inv.rawMat.qty=Math.max(0,inv.rawMat.qty-matSteal);
+          cashGain=Math.round(matSteal*(inv.rawMat?.buy||10)*0.6);
+          if(matSteal>0)(thief.stolenGoods=thief.stolenGoods||[]).push({type:'rawMat',qty:matSteal,val:inv.rawMat?.buy||10});
+          if(bldgState){bldgState.vandalism=(bldgState.vandalism||0)+2;bldgState.condition=Math.max(0,bldgState.condition-6);bldgState.outputRate=Math.max(0.3,bldgState.outputRate-0.1);}
+          newsDetail=`${matSteal}u raw materials (output −10%)`;
+          break;}
+        case 'hospital':{
+          const medSteal=Math.min(inv.medicine?.qty||0,Math.round(1+thiefSkill*4));
+          if(inv.medicine)inv.medicine.qty=Math.max(0,inv.medicine.qty-medSteal);
+          cashGain=Math.round(medSteal*(inv.medicine?.sell||20)*0.5);
+          if(medSteal>0)(thief.stolenGoods=thief.stolenGoods||[]).push({type:'medicine',qty:medSteal,val:inv.medicine?.sell||20});
+          if(bldgState){bldgState.vandalism=(bldgState.vandalism||0)+2;bldgState.condition=Math.max(0,bldgState.condition-5);}
+          newsDetail=`${medSteal}u medicine (worth $${cashGain})`;
+          break;}
+        default:{
+          // Petty cash — scales with treasury balance as proxy for how much cash these institutions hold
+          const basePct={museum:0.03,hotel:0.04,airport:0.025,townhall:0.03,
+                         church:0.01,park:0.005,upkeep:0.005,police:0.01}[target.type]||0.02;
+          const loot=Math.round(Math.max(5, this.s.treasury.balance*basePct*thiefSkill*(0.7+Math.random()*0.5)));
+          this.s.treasury.balance=Math.max(0,this.s.treasury.balance-loot);
+          cashGain=loot; newsDetail=`$${loot} from ${target.type} register`;
+          if(bldgState){bldgState.vandalism=(bldgState.vandalism||0)+1;bldgState.condition=Math.max(0,bldgState.condition-3);}
+          break;}
+      }
+
+      thief.cash+=Math.round(cashGain);
+      thief.stolenCash=(thief.stolenCash||0)+Math.round(cashGain);
+      thief.thieveryExp=Math.min(100,thief.thieveryExp+2);
+      thief.successfulSteals=(thief.successfulSteals||0)+1;
+      thief._lastTarget=null;
+      thief.memory.push(`Day ${t.day}: ${target.type} — ${newsDetail}. Guard lvl ${Math.round(guardSecurity*100)}.`);
+      if(thief.memory.length>8)thief.memory.shift();
+      this._thiefCrimeImpact(thief,m,'building');
+    }else{
+      const bldgState=b[target.type];
+      if(bldgState){bldgState.vandalism=(bldgState.vandalism||0)+1;bldgState.condition=Math.max(0,bldgState.condition-2);}
+      this._arrestThief(thief,t,`caught in empty ${target.type} (guard lvl ${Math.round((guardSecurity+hardness)*100)}%)`);
+    }
+  }
+
+  _thiefRobResident(thief, t){
+    const b=this.s.bldg;
+    const agentSnap=this.a.filter(a=>a.id!==thief.id&&!a.detained).map(a=>({
+      id:a.id,col:a.pos.col,row:a.pos.row,
+      cash:a.cash,sav:a.sav||0,state:a.state,houseId:a.houseId,
+      per:a.per||'',experience:a.experience||{},
+    }));
+
+    // Target: sleeping alone, rich (cash+sav is the score)
+    const victims=agentSnap
+      .filter(a=>a.state==='sleeping'&&(a.cash+a.sav)>5)
+      .filter(a=>agentSnap.filter(b=>b.col===a.col&&b.row===a.row&&b.id!==a.id).length===0)
+      .sort((x,y)=>(y.cash+y.sav)-(x.cash+x.sav)); // richest total first
+
+    if(!victims.length)return;
+    const vSnap=victims[0];
+    const victim=this.a.find(a=>a.id===vSnap.id);
+    if(!victim)return;
+
+    const vHouse=HOUSES[victim.houseId];
+    if(!vHouse)return;
+    const tKey=`${vHouse.col},${vHouse.row}`;
+    if(thief._lastTarget!==tKey){
+      thief.path=bfsPath(thief.pos.col,thief.pos.row,vHouse.col,vHouse.row);
+      thief.pathStep=0; thief._lastTarget=tKey;
+    }
+    thief.destination={col:vHouse.col,row:vHouse.row};
+    if(Math.abs(thief.pos.col-vHouse.col)+Math.abs(thief.pos.row-vHouse.row)>2)return;
+    const houseNow=agentSnap.filter(a=>a.col===vHouse.col&&a.row===vHouse.row&&a.id!==victim.id&&a.id!==thief.id);
+    if(houseNow.length>0){thief.path=[];thief._lastTarget=null;return;}
+
+    // ── DETECTION: thieveryExp vs victim personality vigilance + role experience ──
+    const per=victim.per.toLowerCase();
+    // Vigilant personality traits increase detection
+    const vigilance=[/strict/,/cautious/,/idealist/,/risk-averse/,/alert/,/practical/,/truth/]
+      .filter(rx=>rx.test(per)).length * 6; // 0–42 pts
+    // Role experience as a proxy for security awareness
+    const roleExp=Math.max(...Object.values(victim.experience||{0:0}));
+    const expBonus=Math.min(20, roleExp*0.4); // up to 20 pts for 50 days exp
+    // Thief skill
+    const thiefSkill=thief.thieveryExp/100;
+    // detectProb: base reduced by thiefSkill, raised by victim awareness
+    const detectProb=Math.max(0.03,Math.min(0.95,
+      (0.60-thiefSkill*0.55) + (vigilance+expBonus)/100
+    ));
+    const detected=Math.random()<detectProb;
+
+    if(!detected){
+      // ── LOOT: proportion of victim's actual cash + portion of savings ──
+      // Cash at home: 30–50% of cash (scales with thief skill)
+      const cashPct=0.25+thiefSkill*0.25;
+      const cashSteal=Math.round(Math.min(victim.cash, Math.max(5, victim.cash*cashPct)));
+      // Savings raid: experienced thieves find the stash (0–20% of sav)
+      const savPct=Math.max(0, thiefSkill*0.20-0.05); // only if exp > 25
+      const savSteal=Math.round(Math.min(victim.sav||0, (victim.sav||0)*savPct));
+      const totalStolen=cashSteal+savSteal;
+
+      victim.cash=Math.max(0,victim.cash-cashSteal);
+      if(savSteal>0)victim.sav=Math.max(0,(victim.sav||0)-savSteal);
+      thief.cash+=totalStolen;
+      thief.stolenCash=(thief.stolenCash||0)+totalStolen;
+      thief.thieveryExp=Math.min(100,thief.thieveryExp+2);
+      thief.successfulSteals=(thief.successfulSteals||0)+1;
+      thief._lastTarget=null;
+
+      const hState=b.houses?.[victim.houseId];
+      if(hState){hState.vandalism=(hState.vandalism||0)+1;hState.condition=Math.max(0,hState.condition-4);}
+
+      const savNote=savSteal>0?` + $${savSteal} savings`:'';
+      thief.memory.push(`Day ${t.day}: ${victim.name}'s house ($${cashSteal} cash${savNote}). Awareness: ${Math.round(detectProb*100)}%.`);
+      victim.memory.push(`Day ${t.day}: Woke up $${totalStolen} shorter. Someone knew where I kept it.`);
+      if(thief.memory.length>8)thief.memory.shift();
+      if(victim.memory.length>8)victim.memory.shift();
+      this._thiefCrimeImpact(thief,this.s.metrics,'resident');
+    }else{
+      victim.mood=Math.max(-1,victim.mood-0.15);
+      victim.memory.push(`Day ${t.day}: Woke up — someone was in my house! Called for help.`);
+      if(victim.memory.length>8)victim.memory.shift();
+      this._arrestThief(thief,t,`caught by ${victim.name} (vigilance ${Math.round((vigilance+expBonus))}pts)`);
+    }
+  }
+
+  _thiefRobTreasury(thief, t){
+    const m=this.s.metrics;
+    const target={col:3,row:3}; // town hall
+    const agentPos=new Set(this.a.filter(a=>a.id!==thief.id&&!a.detained).map(a=>`${a.pos.col},${a.pos.row}`));
+    if(agentPos.has(`${target.col},${target.row}`))return;
+
+    const tKey=`${target.col},${target.row}`;
+    if(thief._lastTarget!==tKey){
+      thief.path=bfsPath(thief.pos.col,thief.pos.row,target.col,target.row);
+      thief.pathStep=0; thief._lastTarget=tKey;
+    }
+    thief.destination=target;
+    if(Math.abs(thief.pos.col-target.col)+Math.abs(thief.pos.row-target.row)>1)return;
+    if(agentPos.has(tKey)){thief.path=[];thief._lastTarget=null;return;}
+
+    // ── DETECTION: Maya's mayoral experience + personality vigilance ──
+    const maya=this.a.find(a=>a.role==='mayor');
+    const mayaExp=maya?(maya.experience?.mayor||0):0;
+    const mayaPer=(maya?.per||'').toLowerCase();
+    const mayaVigilance=[/ambitious/,/reputation/,/pragmatic/,/protective/,/stress/]
+      .filter(rx=>rx.test(mayaPer)).length*5;
+    const thiefSkill=thief.thieveryExp/100;
+    const guardSecurity=Math.min(0.50, mayaExp*0.004 + mayaVigilance/100);
+    // Town hall is institutionally well-secured (+0.20 hardness)
+    const detectProb=Math.max(0.08,Math.min(0.97,
+      (1-thiefSkill*0.75)*0.55 + guardSecurity + 0.20
+    ));
+    const detected=Math.random()<detectProb;
+
+    if(!detected){
+      // Loot: up to 12% of treasury, scales with thief skill
+      const maxLoot=Math.min(this.s.treasury.balance*0.12, 250);
+      const loot=Math.round(maxLoot*(0.4+thiefSkill*0.6)*(0.7+Math.random()*0.5));
+      this.s.treasury.balance=Math.max(0,this.s.treasury.balance-loot);
+      thief.cash+=Math.round(loot);
+      thief.stolenCash=(thief.stolenCash||0)+Math.round(loot);
+      thief.thieveryExp=Math.min(100,thief.thieveryExp+4); // hardest job = most growth
+      thief.successfulSteals=(thief.successfulSteals||0)+1;
+      thief._lastTarget=null;
+      this._thiefCrimeImpact(thief,m,'treasury');
+      thief.memory.push(`Day ${t.day}: Town hall ($${loot} of $${Math.round(this.s.treasury.balance+loot)} treasury). Maya's guard: ${Math.round(guardSecurity*100)}%.`);
+      if(thief.memory.length>8)thief.memory.shift();
+      this._news('warn','Treasury raided!',`$${loot} taken from town hall. Maya's security level: ${Math.round(guardSecurity*100)}%.`);
+    }else{
+      this._arrestThief(thief,t,`caught raiding town hall (Maya security ${Math.round((guardSecurity+0.20)*100)}%)`);
+    }
+  }
+
+  // Fix 2: Crime index impact — every steal counts, streak multiplier, type weight
+  _thiefCrimeImpact(thief, m, type){
+    const steals=thief.successfulSteals||0;
+    // Streak bonus: last 10 steals compound, max ×2.5
+    const streakBonus=Math.min(2.5, 1.0 + (steals%10)*0.15);
+    const typeWeight={treasury:5, building:3, resident:2}[type]||2;
+    const crimeHit=Math.round(typeWeight*streakBonus);
+    const repHit=Math.round(Math.ceil(typeWeight*streakBonus*0.5));
+    m.crimeRate=Math.min(100, m.crimeRate+crimeHit);
+    m.reputation=Math.max(0, m.reputation-repHit);
+    // Milestone: every 5 steals, tourists notice and drop
+    if(steals>0&&steals%5===0){
+      m.tourists=Math.max(0,m.tourists-1);
+      if(steals%10===0) // every 10 steals: headline
+        this._news('warn','Crime surge',`${thief.name} has struck ${steals} times. Crime rate: ${m.crimeRate}%. Tourists deterred.`);
+    }
+  }
+
+  // Daily fence: sell stolen goods back to shop inventory + fence cash stash
+  _zackFenceLoot(){
+    const inv=this.s.inv;
+    this.a.filter(a=>a.isThief&&!a.detained).forEach(a=>{
+      // Fence stolen goods — sold back into island inventory at 40–65%
+      const goods=(a.stolenGoods||[]).slice();
+      if(goods.length>0){
+        const fenceRate=0.40+(a.thieveryExp/100)*0.25;
+        let goodsEarned=0; const remaining=[];
+        goods.forEach(g=>{
+          if(Math.random()<0.6){ // fence 60% chance per item per day
+            goodsEarned+=Math.round(g.qty*g.val*fenceRate);
+            if(inv[g.type])inv[g.type].qty=(inv[g.type].qty||0)+Math.round(g.qty*0.7);
+          }else remaining.push(g);
+        });
+        a.stolenGoods=remaining;
+        if(goodsEarned>0){
+          a.cash+=Math.round(goodsEarned);
+          a.memory.push(`Day ${this.s.time.day}: Fenced stolen goods for $${goodsEarned}.`);
+          if(a.memory.length>8)a.memory.shift();
+        }
+      }
+      // Fence stolen cash stash (fence takes a cut of hot cash)
+      const stash=a.stolenCash||0;
+      if(stash>=15){
+        const fenceCashRate=0.50+(a.thieveryExp/100)*0.20; // 50–70%
+        const sellPortion=Math.min(stash,20+Math.floor(Math.random()*50));
+        const fenceCut=Math.round(sellPortion*(1-fenceCashRate));
+        a.stolenCash=Math.max(0,stash-sellPortion);
+        a.cash=Math.max(0,a.cash-fenceCut);
+        a.memory.push(`Day ${this.s.time.day}: Fenced $${sellPortion} stash at ${Math.round(fenceCashRate*100)}%, lost $${fenceCut} to fence.`);
+        if(a.memory.length>8)a.memory.shift();
+      }
+    });
+  }
+
+  _arrestThief(thief, t, reason){
+    thief.detained=true;
+    thief.detainedDays=3+Math.floor(Math.random()*5);
+    thief.detectedSteals=(thief.detectedSteals||0)+1;
+    thief.criminalRecord=(thief.criminalRecord||0)+1;
+    thief.socialCredit=Math.max(0,(thief.socialCredit||60)-40);
+    thief.thieveryExp=Math.max(0,thief.thieveryExp-5);
+    thief._lastTarget=null;
+
+    // PENALTY: 50% ± 20% of cash confiscated (30–70% range)
+    const penaltyRate=Math.max(0.30,Math.min(0.70, 0.50+(Math.random()-0.5)*0.40));
+    const confiscateCash=Math.round(thief.cash*penaltyRate);
+    const confiscateStash=thief.stolenCash||0;
+    const confiscateGoodsVal=(thief.stolenGoods||[]).reduce((s,g)=>s+g.qty*g.val*0.5,0);
+    thief.cash=Math.max(0,thief.cash-confiscateCash);
+    thief.stolenCash=0;
+    thief.stolenGoods=[]; // all stolen goods seized
+    // ALL confiscated value goes to island treasury (less 5% police admin)
+    const toTreasury=Math.round((confiscateCash+confiscateStash+confiscateGoodsVal)*0.95);
+    this.s.treasury.balance+=Math.round(toTreasury);
+
+    this.s.metrics.reputation=Math.max(0,this.s.metrics.reputation-4);
+    this.s.metrics.crimeRate=Math.min(100,this.s.metrics.crimeRate+5);
+    thief.state='detained';
+    thief.destination={col:6,row:5};
+    thief.path=bfsPath(thief.pos.col,thief.pos.row,6,5);
+    thief.pathStep=0;
+
+    const police=this.a.find(a=>a.role==='police');
+    if(police){
+      if(!police.experience)police.experience={};
+      police.experience['police']=(police.experience['police']||0)+5;
+      police.mood=Math.min(1,police.mood+0.1);
+      police.memory.push(`Day ${t.day}: Arrested ${thief.name}. Confiscated $${confiscateCash} (${Math.round(penaltyRate*100)}%). ${reason}.`);
+      if(police.memory.length>8)police.memory.shift();
+    }
+    this.s.bldg.police.arrests=(this.s.bldg.police.arrests||0)+1;
+    thief.memory.push(`Day ${t.day}: ARRESTED — ${reason}. ${Math.round(penaltyRate*100)}% cash (−$${confiscateCash}) + all stash seized. ${thief.detainedDays}d.`);
+    if(thief.memory.length>8)thief.memory.shift();
+    this._news('warn',`${thief.name} arrested`,`${reason}. $${toTreasury} recovered to treasury. ${Math.round(penaltyRate*100)}% cash penalty.`);
+  }
+
+  // Police patrol — called each hourTick
+  _policePpatrol(){
+    const police=this.a.find(a=>a.role==='police'&&!a.detained);
+    if(!police)return;
+    const h=Math.floor(this.s.time.hour),t=this.s.time;
+
+    // Police patrol roads at night and during work hours
+    const isNight=h>=21||h<6;
+    const isWork=this.s.time.dayOfWeek>=1&&this.s.time.dayOfWeek<=5&&h>=8&&h<17;
+    if(!isNight&&!isWork)return;
+
+    // Move to a random road cell (prefer near known thief locations)
+    const thieves=this.a.filter(a=>a.isThief&&!a.detained);
+    let patrolDest;
+    if(thieves.length&&Math.random()<0.4){
+      // Patrol toward known thief area with some noise
+      const t0=thieves[Math.floor(Math.random()*thieves.length)];
+      const nearby=ROAD_CELLS.filter(rc=>
+        Math.abs(rc.col-t0.pos.col)+Math.abs(rc.row-t0.pos.row)<=2);
+      patrolDest=nearby.length?nearby[Math.floor(Math.random()*nearby.length)]:null;
+    }
+    if(!patrolDest){
+      patrolDest=ROAD_CELLS[Math.floor(Math.random()*ROAD_CELLS.length)];
+    }
+    if(police.destination?.col!==patrolDest.col||police.destination?.row!==patrolDest.row){
+      police.state='patrolling';
+      police.destination=patrolDest;
+      police.path=bfsPath(police.pos.col,police.pos.row,patrolDest.col,patrolDest.row);
+      police.pathStep=0;
+    }
+
+    // Check for thieves on same or adjacent tile
+    const policeExp=(police.experience?.police||0);
+    thieves.forEach(thief=>{
+      if(thief.detained)return;
+      const dist=Math.abs(police.pos.col-thief.pos.col)+Math.abs(police.pos.row-thief.pos.row);
+      if(dist>1)return;
+      // Detection probability: police experience vs thief stealth
+      // Police exp 0 → 30% base. Thief exp 100 → almost invisible.
+      const policeSkill=0.30+Math.min(0.50,policeExp/100*0.50);
+      const thiefStealth=thief.thieveryExp/100*0.70;
+      const detectChance=Math.max(0.05,policeSkill-thiefStealth);
+      if(Math.random()<detectChance){
+        this._arrestThief(thief,t,`caught on patrol at (${thief.pos.col},${thief.pos.row})`);
+      }
+    });
+  }
+
+  // Church redemption — called during Sunday church service
+  _churchRedemption(){
+    const t=this.s.time;
+    // All thieves/ex-cons at church get a redemption roll
+    this.a.filter(a=>(a.isThief||a.criminalRecord>0)&&!a.detained&&MAP[a.pos.row]?.[a.pos.col]==='church')
+    .forEach(a=>{
+      const faithBonus=this.s.prayer/100*0.3; // prayer score helps
+      const baseChance=0.15+faithBonus;
+      if(Math.random()<baseChance){
+        const creditGain=15+Math.floor(Math.random()*20);
+        a.socialCredit=Math.min(100,(a.socialCredit||60)+creditGain);
+        a.mood=Math.min(1,a.mood+0.2);
+        if(a.isThief&&a.socialCredit>=40){
+          a.isThief=false;
+          a.memory.push(`Day ${t.day}: Found redemption at church. Credit restored to ${a.socialCredit}. Leaving crime behind.`);
+          if(a.memory.length>8)a.memory.shift();
+          this._news('good',`${a.name} redeemed`,`Church absolution. Credit +${creditGain}. Reformed.`);
+          // Give them a fresh start — try to find private work
+          const openPrivate=Object.entries(CAREERS).find(([k,c])=>!c.public&&c.sal>0&&!this.a.some(x=>x.id!==a.id&&x.role===k));
+          if(openPrivate){
+            a.role=openPrivate[0]; a.wp=openPrivate[1].wp; a.sal=openPrivate[1].sal;
+          }
+        } else if(a.criminalRecord>0){
+          a.memory.push(`Day ${t.day}: Church forgiveness. Credit +${creditGain}.`);
+          if(a.memory.length>8)a.memory.shift();
+          this._news('good',`${a.name} forgiven`,`Credit +${creditGain} through church.`);
+        }
+      }
+    });
+    // Detained agents: church visit from Father Jo reduces sentence
+    const fatherJo=this.a.find(a=>a.id==='fatherjo');
+    if(fatherJo&&MAP[fatherJo.pos.row]?.[fatherJo.pos.col]==='church'){
+      this.a.filter(a=>a.detained).forEach(a=>{
+        if(Math.random()<0.25){
+          a.detainedDays=Math.max(0,a.detainedDays-2);
+          a.memory.push(`Day ${t.day}: Father Jo visited. Sentence reduced.`);
+          if(a.memory.length>8)a.memory.shift();
+        }
+      });
+    }
+  }
+
+  _news(type,title,body){
+    const t=this.s.time;
+    const e={type,title,body,day:t.day,time:`${String(Math.floor(t.hour)).padStart(2,'0')}:${String(Math.floor(t.minute)).padStart(2,'0')}`};
+    this.s.log.unshift(e); if(this.s.log.length>40)this.s.log.pop();
+    this.emit('news',e);
+  }
+  _ledger(label,amount,type){
+    this.s.ledger.unshift({label,amount:Math.round(amount),type,time:String(Math.floor(this.s.time.hour)).padStart(2,'0')+':'+String(Math.floor(this.s.time.minute)).padStart(2,'0')});
+    if(this.s.ledger.length>20)this.s.ledger.pop();
+    this.emit('ledger',this.s.ledger[0]);
+  }
+  on(ev,fn){(this._ev[ev]||(this._ev[ev]=[])).push(fn);}
+  emit(ev,d){(this._ev[ev]||[]).forEach(fn=>fn(d));}
+}
+
+// ── PHASER SCENE ─────────────────────────────────────────────
+class GameScene extends Phaser.Scene{
+  constructor(){super({key:'GameScene'});}
+
+  create(){
+    const GAP=4;
+    const MW=W-LP-RP, MH=H-TH-BH;
+    const CS=Math.floor(Math.min(MW,MH)/8)-GAP;
+    this.CS=CS; this.GAP=GAP;
+    this.GW=(CS+GAP)*8-GAP; this.GH=(CS+GAP)*8-GAP;
+    this.GX=LP+Math.floor((MW-this.GW)/2);
+    this.GY=TH+Math.floor((MH-this.GH)/2);
+    // At 1× speed: 1 real-sec = 4 sim-min. A road cell ≈ 5 sim-min walk.
+    // Tween 400ms keeps movement visually smooth at all speeds.
+    this.STEP_MS=400;
+
+    this.add.rectangle(0,0,W,H,0x0d0f18).setOrigin(0,0);
+    this.add.rectangle(LP,TH,MW,MH,0x0e1220).setOrigin(0,0);
+
+    // ── Draw map ──────────────────────────────────────────────
+    const drawn=new Set();
+    for(let r=0;r<ROWS;r++){
+      for(let c=0;c<COLS;c++){
+        const k=`${c},${r}`;
+        if(drawn.has(k))continue;
+        const ct=MAP[r][c];
+        const x=this.GX+c*(CS+GAP), y=this.GY+r*(CS+GAP);
+        const nonSingle=ct!=='road'&&ct!=='house'&&ct!=='dock';
+        const merge=nonSingle&&c+1<COLS&&MAP[r][c+1]===ct;
+        const cw=merge?(CS+GAP)+CS:CS;
+        if(merge)drawn.add(`${c+1},${r}`);
+        const g=this.add.graphics();
+        g.fillStyle(CFILL[ct]||0x1a1d2a,1);
+        g.lineStyle(2,CBORD[ct]||0xfbbf24,1);
+        g.fillRoundedRect(x,y,cw,CS,4);
+        g.strokeRoundedRect(x,y,cw,CS,4);
+        const lbl=CLBL[ct];
+        if(lbl){
+          const hasSub=this._houseLabel(c,r)!==null;
+          const fs=merge?Math.max(12,Math.floor(CS*.17)):Math.max(9,Math.floor(CS*.115));
+          this.add.text(x+cw/2,y+CS/2-(hasSub?7:0),lbl,{
+            fontFamily:'IBM Plex Mono,monospace',fontSize:fs+'px',fontStyle:'bold',
+            color:'#fff',stroke:'#000000aa',strokeThickness:3,
+            align:'center',wordWrap:{width:cw-8},resolution:2
+          }).setOrigin(.5).setDepth(2);
+        }
+        // Road tiles: clicking deselects current agent
+        if(ct==='road'){
+          const rect=this.add.rectangle(x+CS/2,y+CS/2,CS,CS,0,0).setDepth(3).setInteractive();
+          rect.on('pointerdown',()=>this._deselectAgent());
+        }
+        // House occupant label
+        const hl=this._houseLabel(c,r);
+        if(hl){
+          this.add.text(x+cw/2,y+CS/2+9,hl,{
+            fontFamily:'IBM Plex Mono,monospace',
+            fontSize:Math.max(7,Math.floor(CS*.075))+'px',
+            color:'#ffffffcc',align:'center',wordWrap:{width:cw-6},resolution:2
+          }).setOrigin(.5).setDepth(2);
+        }
+      }
+    }
+
+    this.state=JSON.parse(JSON.stringify(INIT));
+    this.agents=JSON.parse(JSON.stringify(AGENTS));
+    this.dots={};
+    this.pathGfx=this.add.graphics().setDepth(6);
+    this.selAgent=null;
+    // 4) heartbeat timer per agent (staggered)
+    this.hbTimers={};
+
+    this.agents.forEach((a,i)=>{
+      const {x,y}=this._cc(a.pos.col,a.pos.row);
+      a.pixelX=x; a.pixelY=y;
+      this._mkDot(a,i);
+    });
+
+    this.engine=new WorldEngine(this.state,this.agents);
+    this.engine.on('update',({s,a})=>{this._hudUpdate(s,a);});
+    this.engine.on('news',  e=>this._hudNews(e));
+    this.engine.on('ledger',e=>this._hudLedger(e));
+    this.engine.on('career',e=>this._hudCareer(e));
+    this.engine.on('prices',e=>this._hudPrices(e));
+    this.engine.on('futures',f=>this._hudFutures(f));
+    this.engine.on('weekly', w=>this._hudWeekly(w));
+    this.engine.on('taxChange',e=>this._hudTaxChip(e));
+    this.engine.on('gameover',d=>this._gameOver(d));
+
+    this.input.keyboard.on('keydown-SPACE',()=>{this.state.time.simSpeed=this.state.time.simSpeed?0:1;this._spdBtns(this.state.time.simSpeed);});
+    [[1,'ONE'],[2,'TWO'],[4,'FOUR']].forEach(([s,k])=>this.input.keyboard.on('keydown-'+k,()=>{this.state.time.simSpeed=s;this._spdBtns(s);}));
+    window._setSpd=s=>{this.state.time.simSpeed=s;this._spdBtns(s);};
+    window._marry=(aid,bid)=>this._doMarriage(aid,bid);
+
+    this._buildHUD();
+    this._sizeHUD();
+    checkOllama();
+    setInterval(checkOllama, 15000); // re-check every 15s
+
+    // 4) Start heartbeat loop for all agents (staggered by index)
+    this.agents.forEach((a,i)=>{
+      this.time.delayedCall(i*300,()=>this._startHeartbeat(a));
+    });
+  }
+
+  _houseLabel(col,row){
+    // Find which house occupies this cell
+    for(const h of Object.values(HOUSES)){
+      if(h.col===col&&h.row===row)return h.label;
+    }
+    return null;
+  }
+
+  _mkDot(agent,idx){
+    const {x,y}=this._cc(agent.pos.col,agent.pos.row);
+    const R=Math.max(11,Math.floor(this.CS*.15));
+    const c=agent.col||0xffffff;
+    const glow=this.add.circle(x,y,R+4,c,0.14).setDepth(3);
+    const dot= this.add.circle(x,y,R,c,1).setDepth(4).setInteractive();
+    const init=this.add.text(x,y,agent.ini,{
+      fontFamily:'IBM Plex Mono,monospace',fontSize:Math.max(7,Math.floor(R*.76))+'px',
+      fontStyle:'bold',color:'#fff',stroke:'#000',strokeThickness:2,resolution:2
+    }).setOrigin(.5).setDepth(6);
+    const lbl=this.add.text(x,y-R-6,agent.name,{
+      fontFamily:'IBM Plex Mono,monospace',fontSize:'12px',fontStyle:'bold',
+      color:'#ffffff',stroke:'#000000',strokeThickness:3,
+      backgroundColor:'#00000075',padding:{x:3,y:2},resolution:2
+    }).setOrigin(.5,1).setDepth(7);
+    // Selection ring — drawn as a Graphics circle, hidden until selected
+    const ring=this.add.graphics().setDepth(8);
+    ring.setVisible(false);
+
+    dot.on('pointerdown',()=>this._selAgentById(agent.id));
+    dot.on('pointerover',()=>{dot.setScale(1.25);this._hlAgent(agent.id);});
+    dot.on('pointerout', ()=>dot.setScale(1));
+    this.dots[agent.id]={dot,glow,init,lbl,ring,tweening:false,hbActive:false,idx};
+  }
+
+  // 4) Universal slow heartbeat: bob 10px up then back, every 5s
+  _startHeartbeat(agent){
+    const o=this.dots[agent.id];if(!o)return;
+    const doHB=()=>{
+      if(o.tweening)return;
+      const base=this._cc(agent.pos.col,agent.pos.row);
+      const off=this._overlapOffset(agent);
+      const bx=base.x+off, by=base.y;
+      const R=Math.max(11,Math.floor(this.CS*.15));
+      // Bob up then back; update ring on each frame if selected
+      this.tweens.chain({
+        targets:[o.dot,o.glow,o.init],
+        tweens:[
+          {y:by-10,duration:300,ease:'Sine.easeOut',
+            onUpdate:()=>{ if(this.selAgent===agent.id&&o.ring.visible){o.ring.clear();o.ring.lineStyle(3,0xffffff,1);o.ring.strokeCircle(bx,o.dot.y,R+4);} }},
+          {y:by,   duration:300,ease:'Sine.easeIn',
+            onUpdate:()=>{ if(this.selAgent===agent.id&&o.ring.visible){o.ring.clear();o.ring.lineStyle(3,0xffffff,1);o.ring.strokeCircle(bx,o.dot.y,R+4);} }},
+        ]
+      });
+      this.tweens.add({targets:o.lbl,y:by-R-16,duration:300,ease:'Sine.easeOut',yoyo:true});
+    };
+    const loop=()=>{doHB();this.time.delayedCall(5000,loop);};
+    loop();
+  }
+
+  // 3) Overlap offset: agents sharing a cell spread LEFT→RIGHT by 15px each
+  _overlapOffset(agent){
+    const same=this.agents.filter(a=>a.pos.col===agent.pos.col&&a.pos.row===agent.pos.row);
+    if(same.length<=1)return 0;
+    const idx=same.indexOf(agent);
+    const total=same.length;
+    // centre the group
+    return (idx-(total-1)/2)*15;
+  }
+
+  _advanceAgentWalk(agent){
+    const o=this.dots[agent.id];if(!o||o.tweening)return;
+    if(!agent.path||agent.path.length===0||agent.pathStep>=agent.path.length)return;
+    const next=agent.path[agent.pathStep];if(!next)return;
+    o.tweening=true;
+    const spd=Math.max(1,this.state.time.simSpeed);
+    const dur=Math.max(60,Math.floor(this.STEP_MS/spd));
+    const base=this._cc(next.col,next.row);
+    const R=Math.max(11,Math.floor(this.CS*.15));
+    // will recalc offset after moving
+    const tx=base.x,ty=base.y;
+    this.tweens.add({
+      targets:[o.dot,o.glow,o.init],x:tx,y:ty,duration:dur,ease:'Linear',
+      onComplete:()=>{
+        o.tweening=false;
+        // apply correct offset after arrival
+        const off=this._overlapOffset(agent);
+        if(off!==0){
+          this.tweens.add({targets:[o.dot,o.glow,o.init],x:tx+off,duration:120,ease:'Power2'});
+          this.tweens.add({targets:o.lbl,x:tx+off,duration:120,ease:'Power2'});
+        }
+        // Redraw ring at new position if this agent is selected
+        if(this.selAgent===agent.id){
+          const R2=Math.max(11,Math.floor(this.CS*.15));
+          const finalOff=this._overlapOffset(agent);
+          o.ring.clear();
+          o.ring.lineStyle(3,0xffffff,1);
+          o.ring.strokeCircle(tx+finalOff,ty,R2+4);
+        }
+      }
+    });
+    this.tweens.add({targets:o.lbl, x:tx,y:ty-R-6,duration:dur,ease:'Linear'});
+    agent.pos.col=next.col; agent.pos.row=next.row; agent.pathStep++;
+    // 8) fuel burn per step (0.05L per square)
+    const inv=this.state.inv;
+    if(inv.fuel.qty>0){inv.fuel.qty=Math.max(0,inv.fuel.qty-.05);}
+    agent.fuelUsedToday+=.05;
+    // Update glow colour by state — thieves red, detained orange, normal states as before
+    const gc=agent.detained?0xf97316:agent.isThief&&agent.state==='stealing'?0xdc2626:agent.state==='working'?0x22c55e:agent.state==='church'?0xfcd34d:agent.state==='sleeping'?0x1e3a8a:agent.state==='hospital'?0xef4444:agent.state==='patrolling'?0x6366f1:agent.col;
+    o.glow.setFillStyle(gc,.22);
+    // Thieves pulse brighter at night
+    if(agent.isThief&&!agent.detained){
+      const h=Math.floor(this.state.time.hour);
+      const isNight=h>=21||h<5;
+      if(isNight)o.glow.setFillStyle(gc,.45);
+    }
+  }
+
+  _deselectAgent(){
+    if(!this.selAgent)return;
+    const prev=this.dots[this.selAgent];
+    if(prev){prev.ring.setVisible(false);prev.glow.setAlpha(0);}
+    this.selAgent=null;
+    document.querySelectorAll('.ar').forEach(e=>e.classList.remove('sel'));
+    const panel=document.getElementById('ad');
+    if(panel){panel.className='';panel.innerHTML='';}
+  }
+
+  _selAgentById(id){
+    this.pathGfx.clear();
+    document.querySelectorAll('.ar').forEach(e=>e.classList.remove('sel'));
+    const el=document.getElementById('ar-'+id);if(el){el.classList.add('sel');el.scrollIntoView({block:'nearest'});}
+    // Hide ring on previously selected
+    if(this.selAgent&&this.selAgent!==id){
+      const prev=this.dots[this.selAgent];
+      if(prev){prev.ring.setVisible(false);prev.glow.setAlpha(.14);}
+    }
+    this.selAgent=id;
+    const a=this.agents.find(x=>x.id===id);if(!a)return;
+    // Draw bright white ring on selected dot
+    const o=this.dots[id];
+    if(o){
+      const R=Math.max(11,Math.floor(this.CS*.15));
+      const {x,y}=this._cc(a.pos.col,a.pos.row);
+      const off=this._overlapOffset(a);
+      o.ring.clear();
+      o.ring.lineStyle(3,0xffffff,1);
+      o.ring.strokeCircle(x+off,y,R+4);
+      o.ring.setVisible(true);
+      o.glow.setAlpha(.5);
+    }
+    if(a.path&&a.path.length>0){
+      this.pathGfx.lineStyle(2,a.col||0xffffff,.4);
+      this.pathGfx.beginPath();
+      const {x:sx,y:sy}=this._cc(a.pos.col,a.pos.row);
+      this.pathGfx.moveTo(sx,sy);
+      a.path.slice(a.pathStep).forEach(st=>{const {x,y}=this._cc(st.col,st.row);this.pathGfx.lineTo(x,y);});
+      this.pathGfx.strokePath();
+    }
+    this._showAgentDetail(a);
+    // Queue LLM thought — panel refreshes when thought arrives
+    if(ollamaOnline){
+      const worldCtx=`Day ${this.state.time.day}, treasury $${Math.round(this.state.treasury.balance)}, morale ${this.state.metrics.morale}`;
+      queueThink(a,worldCtx,()=>{if(this.selAgent===a.id)this._showAgentDetail(a);});
+    }
+  }
+  _doMarriage(aid,bid){
+    const a=this.agents.find(x=>x.id===aid);
+    const b=this.agents.find(x=>x.id===bid);
+    if(!a||!b||!canMarry(a,b))return;
+    // Marry
+    a.sp=bid; b.sp=aid;
+    // Move into one house (use A's house, release B's)
+    const ha=HOUSES[a.houseId];
+    const hb=HOUSES[b.houseId];
+    if(ha&&hb&&ha!==hb){
+      // B moves into A's house
+      if(!ha.residents.includes(bid))ha.residents.push(bid);
+      hb.residents=hb.residents.filter(id=>id!==bid);
+      hb.rentPerWeek=30; // B's old house now for rent
+      b.houseCell={col:ha.col,row:ha.row};
+      b.houseId=a.houseId;
+      AGENT_HOUSE[bid]=a.houseId;
+      ha.label=`${a.name} & ${b.name}`;
+    }
+    this._news('good',`${a.name} & ${b.name} married!`,`They now share a house. Morale boost.`);
+    a.mood=Math.min(1,a.mood+.25);
+    b.mood=Math.min(1,b.mood+.25);
+    this._showAgentDetail(a); // refresh detail panel
+  }
+
+  // 5) Rich agent detail panel ─────────────────────────────────
+  _showAgentDetail(a){
+    const panel=document.getElementById('ad');if(!panel)return;
+    const spouse=a.sp?this.agents.find(x=>x.id===a.sp)?.name:'—';
+    const hp=Math.round(a.health*100), mn=Math.round(((a.mood+1)/2)*100);
+    const hc=hp>60?'#4ade80':hp>30?'#fbbf24':'#f87171';
+    const mc=mn>60?'#4ade80':mn>30?'#fbbf24':'#f87171';
+    const house=HOUSES[a.houseId];
+    const locT=MAP[a.pos.row]?.[a.pos.col]||'?';
+    const destT=a.destination?MAP[a.destination.row]?.[a.destination.col]||'?':'—';
+    const steps=(a.path?.length||0)-(a.pathStep||0);
+    const housemates=house?house.residents.filter(id=>id!==a.id).map(id=>this.agents.find(x=>x.id===id)?.name||id).join(', '):'alone';
+
+    // Marriage candidates
+    const candidates=this.agents.filter(b=>canMarry(a,b)&&b.mood>.3);
+    const marriageHTML=a.sp?'':(candidates.length>0
+      ?`<div style="margin-top:0.56vh"><span class="adl">Propose to</span><div style="display:flex;gap:0.31vw;flex-wrap:wrap;margin-top:0.42vh">${candidates.slice(0,4).map(b=>`<button class="mpbtn" onclick="window._marry('${a.id}','${b.id}')">${b.name}</button>`).join('')}</div></div>`
+      :'');
+
+    // Mayor-only: show auto-trade log (read-only, AI-driven)
+    const tradeHTML = a.id==='maya' ? (()=>{
+      const log=this._tradeLog||[];
+      const entries=log.length
+        ? log.slice(0,5).map(e=>`<div class="trade-entry">${e}</div>`).join('')
+        : '<div class="trade-entry tskip">No trades yet — Maya evaluating market…</div>';
+      return `<div class="trade-panel">
+  <div class="trade-title">⇄ Auto-Trade <span style="font-size:0.7vw;color:#475569;font-weight:400;text-transform:none">Maya decides autonomously</span></div>
+  <div class="trade-log">${entries}</div>
+</div>`;
+    })() : '';
+
+    panel.className='vis';
+    panel.innerHTML=`
+<div class="adh">
+  <div class="adav" style="background:${a.ch}22;border-color:${a.ch};color:${a.ch}">${a.ini}</div>
+  <div style="flex:1">
+    <div class="adnm">${a.name} <span style="font-size:0.78vw;color:#94a3b8">${a.g}${a.age} · ${a.role.replace(/_/g,' ')}</span></div>
+    <div class="admt">${a.sp?'♥ Married to '+spouse:'Single'} · ${house?.label||'no house'}</div>
+  </div>
+  <div class="otag"><div class="od${ollamaOnline?'':' off'}"></div><span class="ai-lbl">${ollamaOnline?'AI live':'AI off'}</span></div>
+</div>
+<div class="adsr">
+  <div class="ads"><div class="adsv" style="color:${hc}">${hp}</div><div class="adsl">Health</div></div>
+  <div class="ads"><div class="adsv" style="color:${mc}">${mn}</div><div class="adsl">Mood</div></div>
+  <div class="ads"><div class="adsv" style="color:${a.cash<0?'#f87171':a.cash<50?'#fbbf24':'#4ade80'}">$${a.cash}</div><div class="adsl">Cash</div></div>
+  <div class="ads"><div class="adsv" style="color:#a78bfa">$${a.sav||0}</div><div class="adsl">Savings</div></div>
+  <div class="ads"><div class="adsv" style="color:${a.loan>0?'#f87171':'#475569'}">$${a.loan||0}</div><div class="adsl">Loan</div></div>
+  <div class="ads"><div class="adsv" style="color:${(a.socialCredit||60)>=70?'#4ade80':(a.socialCredit||60)>=40?'#fbbf24':'#f87171'}">${a.socialCredit||60}</div><div class="adsl">Credit</div></div>
+</div>
+<div class="adr"><span class="adl" style="color:#94a3b8;font-size:0.63vw">Credit = personal standing. Loan access, career fit. Island Rep = metrics chip.</span></div>
+${a.detained?`<div style="background:#1a1000;border:0.08vw solid #92400e;border-radius:0.31vw;padding:0.42vh 0.55vw;font-size:0.78vw;color:#fbbf24;font-weight:700">⚠ DETAINED at police station · ${a.detainedDays||0} days remaining</div>`:''}
+${a.isThief?`<div style="background:#2d0a0a;border:0.08vw solid #7f1d1d;border-radius:0.31vw;padding:0.42vh 0.55vw;font-size:0.78vw;color:#f87171;font-weight:700">🔪 ACTIVE THIEF · ${a.successfulSteals||0} steals · Stealth ${a.thieveryExp||0}/100 · Caught ${a.detectedSteals||0}× · Stash $${a.stolenCash||0}</div>`:''}
+${a.criminalRecord>0?`<div class="adr"><span class="adl">Criminal rec.</span><span class="adv" style="color:#f87171">${a.criminalRecord} offence${a.criminalRecord>1?'s':''} · ${a.successfulSteals||0} successful · ${a.detectedSteals||0} caught</span></div>`:''}
+${a.bankrupt?`<div style="background:#2d0a0a;border:0.08vw solid #7f1d1d;border-radius:0.31vw;padding:0.42vh 0.55vw;font-size:0.78vw;color:#fca5a5;font-weight:700">⚠ BANKRUPT — lost role, all assets cleared</div>`:''}
+${a.loan>0?`<div class="adr"><span class="adl">Loan</span><span class="adv" style="color:#f87171">$${a.loan} outstanding · $${a.loanWeekly}/wk repayment · ${a.debtDays||0} debt days</span></div>`:''}
+${a.debtDays>0&&!a.loan?`<div class="adr"><span class="adl">Debt</span><span class="adv" style="color:#fbbf24">${a.debtDays} consecutive days cash &lt; 0</span></div>`:''}
+<div class="hhrow"><span class="lbl">House </span>${house?.label||'—'} (val $${house?.value||0}) · Housemates: ${housemates||'none'}</div>
+<div class="adr"><span class="adl">Doing</span><span class="adv">${a.state} at ${locT} (${String.fromCharCode(65+a.pos.col)}${a.pos.row+1})</span></div>
+<div class="adr"><span class="adl">Going to</span><span class="adv">${destT} · ${steps} steps left</span></div>
+<div class="adr"><span class="adl">Personality</span><span class="adv" style="white-space:normal;line-height:1.4">${a.per||'—'}</span></div>
+<div class="adr"><span class="adl">Memory</span><span class="adv" style="white-space:normal;line-height:1.4">${a.memory.slice(-2).join(' | ')||'nothing yet'}</span></div>
+<div class="adr"><span class="adl">Fuel today</span><span class="adv">${(a.fuelUsedToday||0).toFixed(2)}L burned</span></div>
+${(()=>{
+  // Build experience summary — show all roles with any experience
+  const exp=a.experience||{};
+  const entries=Object.entries(exp).filter(([,d])=>d>0).sort((x,y)=>y[1]-x[1]);
+  if(!entries.length)return `<div class="adr"><span class="adl">Experience</span><span class="adv" style="color:#475569">None yet</span></div>`;
+  const career=CAREERS[a.role];
+  const minExp=career?.minExp||0;
+  const curExp=(exp[a.role]||0);
+  const eff=minExp>0?(curExp>=minExp?100:Math.round((0.4+(0.6*curExp/minExp))*100)):100;
+  const effCol=eff>=100?'#4ade80':eff>=70?'#fbbf24':'#f87171';
+  const bars=entries.slice(0,4).map(([r,d])=>`${r.replace(/_/g,' ')} ${d}d`).join(' · ');
+  return `<div class="adr"><span class="adl">Experience</span><span class="adv">${bars}</span></div>
+<div class="adr"><span class="adl">Efficiency</span><span class="adv" style="color:${effCol}">${eff}%${eff<100?` (needs ${minExp-curExp}d more)`:' ✓ full'}</span></div>`;
+})()}
+${marriageHTML}
+${tradeHTML}
+${ollamaOnline&&a.lastThought?`<div class="th">💭 ${a.lastThought}</div>`:''}
+${ollamaOnline&&!a.lastThought?`<div class="th" style="color:#475569">💭 Waiting for first thought…</div>`:''}
+${!ollamaOnline?`<div style="font-size:0.7vw;color:#475569;font-style:italic;margin-top:0.28vh">Ollama offline — run: ollama pull llama3.2</div>`:''}
+`;
+  }
+
+  // ── AUTO-TRADE ENGINE (Maya, personality-driven) ─────────────
+  // Called from engine hourTick via scene bridge every few sim-hours.
+  _mayaAutoTrade(){
+    const maya=this.agents.find(a=>a.id==='maya');
+    if(!maya)return;
+    if(!this.state.bldg.airport.open)return;
+    if(this.state.supply.status==='blocked')return;
+
+    // Change 1: trading only on working days/hours (Mon–Fri 08:00–17:00)
+    const t=this.state.time;
+    const h=Math.floor(t.hour), dow=t.dayOfWeek;
+    const isWorkTime=dow>=1&&dow<=5&&h>=8&&h<17;
+    if(!isWorkTime)return;
+
+    const inv=this.state.inv;
+    const tr =this.state.treasury;
+    // Change 3: FEE now depends on reputation (social credit)
+    // High reputation → lower fee (trusted trader). Low → penalty.
+    const rep=this.state.metrics.reputation;
+    const FEE=Math.max(0.01, Math.min(0.15, 0.08-(rep-50)*0.001));
+    const iq =Math.round(65+maya.mood*15+(rep-50)*0.2);
+    if(Math.random()*100>iq)return;
+
+    const lbl={food:'Food',medicine:'Medicine',fuel:'Fuel',rawMat:'RawMat',
+               goods:'Goods',fish:'Fish',minerals:'Minerals',alcohol:'Alcohol',treasury:'Cash'};
+
+    const consumables=[
+      {k:'food',    use:17, pri:10, val:inv.food?.buy||3},
+      {k:'medicine',use:2,  pri:8,  val:inv.medicine?.buy||12},
+      {k:'fuel',    use:5,  pri:5,  val:inv.fuel?.buy||6},
+      {k:'rawMat',  use:20, pri:4,  val:inv.rawMat?.buy||10},
+    ];
+    const exports=[
+      {k:'goods',    val:inv.goods?.exportPrice||45},
+      {k:'fish',     val:inv.fish?.exportPrice||18},
+      {k:'minerals', val:inv.minerals?.exportPrice||28},
+      {k:'alcohol',  val:inv.alcohol?.sell||14},
+    ];
+
+    // Find most urgent shortage
+    const urgent=consumables
+      .map(i=>({...i,days:Math.floor((inv[i.k]?.qty||0)/i.use)}))
+      .filter(i=>i.days<3)
+      .sort((a,b)=>b.pri-a.pri)[0];
+
+    const cashUrgent=tr.balance<200;
+    let mode=null,sellKey=null,buyKey=null,sellQty=0,receiveQty=0,gross=0;
+
+    // Change 2: ONLY cash→goods OR goods→cash. No goods→goods.
+
+    if(urgent&&tr.balance>=150){
+      // Mode A: cash → goods (buy urgent consumable with treasury)
+      mode='cash→goods';
+      sellKey='treasury'; buyKey=urgent.k;
+      const bv=inv[urgent.k]?.buy||1;
+      const targetBuy=urgent.use*3;
+      const spend=Math.min(targetBuy*bv*(1+FEE), tr.balance*0.35);
+      receiveQty=Math.floor(spend/((1+FEE)*bv));
+      gross=receiveQty*bv;
+      if(receiveQty>0){
+        tr.balance-=gross*(1+FEE);
+        inv[buyKey].qty=(inv[buyKey].qty||0)+receiveQty;
+      }else mode=null;
+    }
+
+    if(!mode){
+      // Mode B: goods → cash (sell export surplus)
+      const sellable=exports
+        .filter(s=>(inv[s.k]?.qty||0)>8)
+        .sort((a,b)=>b.val-a.val)[0];
+      if(sellable&&(cashUrgent||!urgent&&Math.random()<0.2)){
+        mode='goods→cash';
+        sellKey=sellable.k; buyKey='treasury';
+        sellQty=Math.min(Math.floor((inv[sellKey]?.qty||0)*0.35), 25);
+        gross=sellQty*sellable.val;
+        const revenue=gross*(1-FEE);
+        receiveQty=Math.round(revenue);
+        if(sellQty>0){
+          inv[sellKey].qty=Math.max(0,(inv[sellKey].qty||0)-sellQty);
+          tr.balance+=revenue;
+        }else mode=null;
+      }
+    }
+
+    if(!mode)return;
+
+    const sellLbl=lbl[sellKey]||sellKey;
+    const buyLbl =lbl[buyKey]||buyKey;
+    const sellStr=mode==='goods→cash'?`${sellQty} ${sellLbl}`:`$${Math.round(gross*(1+FEE))}`;
+    const buyStr =mode==='goods→cash'?`$${receiveQty}`:`${receiveQty} ${buyLbl}`;
+    const feeAmt =mode==='goods→cash'?Math.round(gross*FEE):Math.round(gross*FEE);
+    const logLine=`<span class="tok">Day${t.day}·IQ${iq}</span> [${mode}] ${sellStr}→<span class="tok">${buyStr}</span> fee$${feeAmt} rep${rep}`;
+    if(!this._tradeLog)this._tradeLog=[];
+    this._tradeLog.unshift(logLine);
+    if(this._tradeLog.length>10)this._tradeLog.pop();
+    this.engine._ledger(`Maya: ${mode} ${sellStr}→${buyStr}`,-feeAmt,'spend');
+    // Trade logged only to Maya's trade panel (not world news — keeps news clean)
+    maya.memory.push(`Day ${t.day}: ${mode} — ${sellStr}→${buyStr}.`);
+    if(maya.memory.length>6)maya.memory.shift();
+  }
+
+  // ── NEWS FADE: dim entries older than N sim-days ──────────────
+  _fadeStaleNews(){
+    const list=document.getElementById('nl');if(!list)return;
+    const now=this.state.time.day;
+    Array.from(list.children).forEach((el,i)=>{
+      // i=0 is newest. Fade by age: index acts as proxy since news is insertion-ordered.
+      // Also store data-day on insertion for precise fading.
+      const entryDay=parseInt(el.dataset.day||now);
+      const age=now-entryDay; // sim-days old
+      let opacity=1;
+      if(age>=4)     opacity=0.18;
+      else if(age>=3)opacity=0.35;
+      else if(age>=2)opacity=0.55;
+      else if(age>=1)opacity=0.75;
+      el.style.opacity=opacity;
+    });
+  }
+
+  _cc(col,row){return{x:this.GX+col*(this.CS+this.GAP)+this.CS/2,y:this.GY+row*(this.CS+this.GAP)+this.CS/2};}
+
+  _gameOver({reason,day}){
+    this.add.rectangle(W/2,H/2,W,H,0,0.88).setDepth(20);
+    this.add.text(W/2,H/2-55,'SIMULATION OVER',{fontFamily:'IBM Plex Mono',fontSize:'30px',fontStyle:'bold',color:'#f87171',stroke:'#000',strokeThickness:4,resolution:2}).setOrigin(.5).setDepth(21);
+    this.add.text(W/2,H/2+5,reason==='deficit'?'Treasury deficit >50%\nDay '+day:'Population collapsed\nDay '+day,{fontFamily:'IBM Plex Mono',fontSize:'14px',color:'#fecaca',align:'center',resolution:2}).setOrigin(.5).setDepth(21);
+    this.add.text(W/2,H/2+58,'Score: '+Math.round(day*this.state.metrics.happiness/100),{fontFamily:'IBM Plex Mono',fontSize:'22px',fontStyle:'bold',color:'#a78bfa',resolution:2}).setOrigin(.5).setDepth(21);
+    this.state.time.simSpeed=0;
+  }
+
+  update(_t,dt){
+    if(this.engine&&this.state.time.simSpeed>0)this.engine.tick(dt,this.state.time.simSpeed);
+    this.agents.forEach(a=>this._advanceAgentWalk(a));
+    // Maya auto-trade
+    if(Math.random()<0.0005*this.state.time.simSpeed)this._mayaAutoTrade();
+    // Refresh selected agent detail
+    if(this.selAgent&&Math.random()<.003){const a=this.agents.find(x=>x.id===this.selAgent);if(a)this._showAgentDetail(a);}
+    // Background Ollama thinking — each agent gets a thought roughly every 2 sim-hours
+    // Probability tuned so ~1 agent/minute at 1× speed. Queue handles concurrency.
+    if(ollamaOnline&&Math.random()<0.0003*this.state.time.simSpeed){
+      const a=this.agents[Math.floor(Math.random()*this.agents.length)];
+      if(a&&!a.bankrupt){
+        const worldCtx=`Day ${this.state.time.day}, treasury $${Math.round(this.state.treasury.balance)}, morale ${this.state.metrics.morale}`;
+        queueThink(a,worldCtx,()=>{if(this.selAgent===a.id)this._showAgentDetail(a);});
+      }
+    }
+    if(Math.random()<0.01)this._fadeStaleNews();
+  }
+
+  // ── HUD ──────────────────────────────────────────────────────
+  _t(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
+  _s(id,p,v){const e=document.getElementById(id);if(e)e.style[p]=v;}
+
+  _hudUpdate(s,a){
+    const m=s.metrics,t=s.time,inv=s.inv;
+    const DOW=['','Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const hh=String(Math.floor(t.hour)).padStart(2,'0'),mm=String(Math.floor(t.minute)).padStart(2,'0');
+    // Clock / days / score — now in topbar (same IDs)
+    this._t('rpt',hh+':'+mm);
+    this._t('rpd',DOW[t.dayOfWeek]+' · Wk '+t.week);
+    this._t('rpdays',String(t.day));
+    this._t('rpscore','Score '+Math.round(t.day*m.happiness/100));
+    // Topbar chip updates
+    const chip=(id,val,dlt,col)=>{
+      const c=document.getElementById('chip-'+id);if(!c)return;
+      const ve=c.querySelector('.cv');if(ve){ve.childNodes[0].textContent=val;ve.style.color=col;}
+      const de=c.querySelector('.dv');if(de){const d=Math.round(dlt||0);de.textContent=d>0?'↑'+d:d<0?'↓'+Math.abs(d):'→';de.className='dv '+(d>0?'up':d<0?'dn':'fl');}
+    };
+    chip('ec',m.economy,s.deltas?.economy||0,'#22c55e');
+    chip('mo',m.morale,s.deltas.morale,'#f97316');
+    chip('ha',m.happiness,s.deltas.happiness,'#a78bfa');
+    chip('re',m.reputation,s.deltas.reputation,'#fcd34d');
+    chip('cr',m.crimeRate+'%',-(s.deltas.crimeRate||0),'#f87171');
+    chip('tu',m.tourists,s.deltas.tourists,'#34d399');
+    // Work badge
+    const h=t.hour,dow=t.dayOfWeek;
+    const isW=dow>=1&&dow<=5&&h>=8&&h<17,isSun=dow===7&&h>=9&&h<12,isSl=h>=21||h<6;
+    ['wbg'].forEach(id=>{
+      const e=document.getElementById(id);if(!e)return;
+      if(isSun){e.textContent='CHURCH';e.className='wb wch';}
+      else if(isW){e.textContent='WORK';e.className='wb won';}
+      else if(isSl){e.textContent='SLEEP';e.className='wb woff';}
+      else{e.textContent='FREE';e.className='wb wfr';}
+    });
+    if(isW){const p=Math.min(100,((h-8)*60+t.minute)/(9*60)*100);this._s('tbf','width',p+'%');}
+    else this._s('tbf','width','0%');
+    // Treasury
+    this._t('tval','$'+Math.round(s.treasury.balance).toLocaleString());
+    const dlt=Math.round(s.treasury.income-s.treasury.expense);
+    const te=document.getElementById('tdlt');if(te){te.textContent=(dlt>=0?'↑':'↓')+' $'+Math.abs(dlt)+'/day';te.style.color=dlt>=0?'#4ade80':'#f87171';}
+    this._t('m3inc','$'+Math.round(s.treasury.income));
+    this._t('m3exp','$'+Math.round(s.treasury.expense));
+    const def=Math.round(s.treasury.deficitPct);
+    const de=document.getElementById('m3def');if(de){de.textContent=def+'%';de.style.color=def>40?'#f87171':def>20?'#fbbf24':'#4ade80';}
+    // Tax chip
+    const taxPct=Math.round((s.treasury.taxRate||0.1)*100);
+    const tc=document.getElementById('tax-chip');if(tc)tc.textContent=`Tax ${taxPct}%`;
+    const tv=document.getElementById('tax-val');if(tv)tv.textContent=taxPct+'%';
+    // Agent bars + cash display
+    a.forEach(ag=>{
+      const hp=Math.round(ag.health*100),mn=Math.round(((ag.mood+1)/2)*100);
+      const hc=hp>60?'#22c55e':hp>30?'#f59e0b':'#ef4444';
+      const mc=mn>60?'#22c55e':mn>30?'#f59e0b':'#ef4444';
+      const he=document.getElementById('hp-'+ag.id);if(he){he.style.width=hp+'%';he.style.background=hc;}
+      const me=document.getElementById('md-'+ag.id);if(me){me.style.width=mn+'%';me.style.background=mc;}
+      // Update state label — rl- contains a text node + cash span child; only update text node
+      const re=document.getElementById('rl-'+ag.id);
+      if(re){if(re.firstChild&&re.firstChild.nodeType===3)re.firstChild.textContent=ag.state+' · ';else re.insertBefore(document.createTextNode(ag.state+' · '),re.firstChild);}
+      // live occupation badge — reflect thief/detained
+      const oc=document.getElementById('occ-'+ag.id);
+      if(oc){
+        oc.textContent=ag.detained?'DETAINED':ag.isThief?'thief':ag.role.replace(/_/g,' ');
+        oc.style.color=ag.detained?'#fbbf24':ag.isThief?'#f87171':'';
+        oc.style.borderColor=ag.detained?'#92400e60':ag.isThief?'#7f1d1d60':'';
+        oc.style.background=ag.detained?'#1a100022':ag.isThief?'#2d0a0a22':'';
+      }
+      // live cash
+      const ce=document.getElementById('ca-'+ag.id);
+      if(ce){
+        const cashCol=ag.cash<0?'#f87171':ag.cash<50?'#fbbf24':'#94a3b8';
+        ce.textContent='$'+ag.cash;
+        ce.style.color=cashCol;
+      }
+    });
+    // Calendar
+    for(let i=1;i<=7;i++){const e=document.getElementById('cd'+i);if(!e)continue;e.className='cd'+(i===t.dayOfWeek?' act':i<t.dayOfWeek?' past':i===7?' sun':i>=6?' wk':'');}
+    // Inventory
+    this._buildInv(s);
+    this._t('botdays','Day '+t.day);
+  }
+
+  _buildInv(s){
+    const g=document.getElementById('invg');if(!g)return;
+    const inv=s.inv;
+    const items=[
+      {k:'food',     l:'Food',     d:17, priceKey:'buy'},
+      {k:'medicine', l:'Medicine', d:2,  priceKey:'buy'},
+      {k:'fuel',     l:'Fuel',     d:10, priceKey:'buy'},
+      {k:'rawMat',   l:'Materials',d:20, priceKey:'buy'},
+      {k:'goods',    l:'Goods',    d:0,  priceKey:'exportPrice'},
+      {k:'alcohol',  l:'Alcohol',  d:1,  priceKey:'sell'},
+      {k:'fish',     l:'Fish',     d:0,  priceKey:'exportPrice'},
+      {k:'minerals', l:'Minerals', d:0,  priceKey:'exportPrice'},
+    ];
+    g.innerHTML=items.map(it=>{
+      const item=inv[it.k]||{};
+      const qty=Math.round(item.qty||0);
+      const days=it.d>0?Math.floor(qty/it.d):99;
+      const cl=days<=2?'crit':days<=5?'warn':'ok';
+      const price=item[it.priceKey]||0;
+      const nomKey=it.priceKey==='exportPrice'?'nominalExport':it.priceKey==='buy'?'nominalBuy':'nominalSell';
+      const nomPrice=item[nomKey]||price;
+      const priceCol=price>nomPrice*1.1?'#f87171':price<nomPrice*0.9?'#4ade80':'#94a3b8';
+      const priceLabel=it.priceKey==='exportPrice'?'exp':'buy';
+      return`<div class="ii">
+        <span class="in">${it.l}</span>
+        <div style="text-align:right">
+          <div class="iq ${cl}">${qty}u</div>
+          <div class="id" style="color:${priceCol}">$${price} ${priceLabel}${days>0&&days<99?' · '+days+'d':''}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  _hudNews(e){
+    const list=document.getElementById('nl');if(!list)return;
+    const tm={crisis:'nc2',warn:'nw2',good:'ng2',info:'nif'}, im={crisis:'!',warn:'~',good:'+',info:'i'};
+    const el=document.createElement('div');
+    el.className='nt '+(tm[e.type]||'nif');
+    el.dataset.day=e.day||this.state.time.day; // store sim-day for age-based fading
+    el.innerHTML=`<div class="ni2">${im[e.type]||'i'}</div><div class="nb"><div class="nti">${e.title}</div><div class="nsb">${e.body}</div></div><div class="ntm">Day ${e.day||this.state.time.day} · ${e.time}</div>`;
+    list.insertBefore(el,list.firstChild);
+    while(list.children.length>8)list.removeChild(list.lastChild);
+    this._fadeStaleNews(); // immediately re-evaluate all opacities
+    // ticker
+    const tk=document.getElementById('tkr');if(!tk)return;
+    const col=e.type==='crisis'?'t-cr':e.type==='good'?'t-gd':'t-wn';
+    const sp=document.createElement('span');sp.className=col;sp.textContent=' · '+e.title+': '+e.body;
+    tk.insertBefore(sp,tk.firstChild);
+    if(tk.children.length>8)tk.removeChild(tk.lastChild);
+  }
+
+  _hudLedger(e){
+    const list=document.getElementById('belog');if(!list)return;
+    const el=document.createElement('div');
+    el.className=`beli ${e.type}`;
+    const sign=e.amount>0?'+':e.amount<0?'':'';
+    el.textContent=`${e.time} ${sign}$${Math.abs(e.amount)} ${e.label}`;
+    list.insertBefore(el,list.firstChild);
+    while(list.children.length>8)list.removeChild(list.lastChild);
+  }
+
+  _hudCareer(e){
+    // Update career log panel in right panel
+    const list=document.getElementById('career-log');
+    if(list){
+      const el=document.createElement('div');
+      const isMayor=e.type==='mayor';
+      el.className='nt '+(isMayor?(e.snap?'nw2':'ng2'):'nif');
+      el.dataset.day=e.day||this.state.time.day;
+      const icon=isMayor?(e.snap?'!':'★'):'⇄';
+      let body='';
+      if(isMayor){
+        body=`<div class="nti">${e.snap?'Snap vote':'Mayor elected'}: ${e.winner}</div>`;
+      } else {
+        const lines=(e.results||[]).map(r=>`<div class="nsb">${r}</div>`).join('');
+        body=`<div class="nti">Term ${e.term} career changes</div>${lines||'<div class="nsb">No changes this term.</div>'}`;
+      }
+      el.innerHTML=`<div class="ni2">${icon}</div><div class="nb">${body}</div><div class="ntm">Day ${e.day}</div>`;
+      list.insertBefore(el,list.firstChild);
+      while(list.children.length>6)list.removeChild(list.lastChild);
+      const term=e.term||Math.floor((e.day||this.state.time.day)/30)+1;
+      const sh=document.getElementById('career-term');
+      if(sh)sh.textContent=`Term ${term} · Next Day ${Math.ceil(term*30)}`;
+    }
+
+    // Refresh occupation badges (occ-) not rl- which contains cash span
+    this.agents.forEach(a=>{
+      const oc=document.getElementById('occ-'+a.id);
+      if(oc)oc.textContent=a.role.replace(/_/g,' ');
+    });
+  }
+
+  _hudPrices(e){
+    // Update dock price index display
+    const dock=document.getElementById('dock-idx');
+    if(dock){
+      const col=e.dock<0.8?'#4ade80':e.dock>1.3?'#f87171':'#fbbf24';
+      const label=e.dock<0.8?'↓ surplus':e.dock>1.3?'↑ scarce':'nominal';
+      dock.innerHTML=`<span style="color:${col}">${e.dock.toFixed(2)}× ${label}</span>`;
+    }
+    // Update airport price index + flight cost
+    const air=document.getElementById('airport-idx');
+    if(air){
+      const col=e.airport<1.0?'#4ade80':e.airport>1.5?'#f87171':'#fbbf24';
+      air.innerHTML=`<span style="color:${col}">${e.airport.toFixed(2)}× buy · $${e.flightCost}/flight</span>`;
+    }
+    // Also update inventory display to show live prices
+    const inv=this.state.inv;
+    ['goods','fish','minerals'].forEach(k=>{
+      const el=document.getElementById('exprice-'+k);
+      if(el&&inv[k])el.textContent='$'+inv[k].exportPrice+'/u';
+    });
+    ['food','medicine','fuel','rawMat'].forEach(k=>{
+      const el=document.getElementById('bprice-'+k);
+      if(el&&inv[k])el.textContent='$'+inv[k].buy+'/u';
+    });
+  }
+
+  _hudFutures(f){
+    const val=document.getElementById('fi-val');
+    const chg=document.getElementById('fi-chg');
+    if(!val||!chg)return;
+    val.textContent=Math.round(f.value).toLocaleString();
+    const up=f.changePct>=0;
+    chg.textContent=(up?'▲':'▼')+Math.abs(f.changePct).toFixed(2)+'%';
+    chg.className='fi-chg '+(up?'up':'dn');
+    // Update fi-chip border colour
+    const chip=document.getElementById('fi-chip');
+    if(chip)chip.style.borderColor=up?'#166534':'#7f1d1d';
+  }
+
+  _hudWeekly(w){
+    if(!w)return;
+    const modal=document.getElementById('weekly-modal');
+    const body=document.getElementById('wm-body');
+    const wk=document.getElementById('wm-week');
+    if(!modal||!body||!wk)return;
+    wk.textContent=w.week;
+    const row=(k,v,cls='')=>`<div class="wm-row"><span class="wm-k">${k}</span><span class="wm-v ${cls}">${v}</span></div>`;
+    const trend=(v,good,bad)=>v>=good?'wm-good':v<=bad?'wm-bad':'wm-neu';
+    body.innerHTML=`
+      <div class="wm-sec">📈 Economy</div>
+      ${row('Economy',w.economy+'%',trend(w.economy,65,40))}
+      ${row('Treasury','$'+w.balance.toLocaleString(),w.balance>500?'wm-good':w.balance<0?'wm-bad':'wm-neu')}
+      ${row('Deficit',w.deficit+'%',w.deficit<10?'wm-good':w.deficit>35?'wm-bad':'wm-neu')}
+      ${row('Tax rate',w.taxRate+'%','')}
+      ${row('Futures Index',w.futuresVal+(w.futuresPct>=0?' ▲':' ▼')+Math.abs(w.futuresPct)+'%',w.futuresPct>=0?'wm-good':'wm-bad')}
+      <div class="wm-sec">👥 Community</div>
+      ${row('Morale',w.morale+'%',trend(w.morale,65,40))}
+      ${row('Happiness',w.happiness+'%',trend(w.happiness,65,40))}
+      ${row('Reputation',w.reputation+'%',trend(w.reputation,65,40))}
+      ${row('Crime rate',w.crime+'%',w.crime<15?'wm-good':w.crime>40?'wm-bad':'wm-neu')}
+      ${row('Tourists/day',w.tourists,w.tourists>5?'wm-good':w.tourists===0?'wm-bad':'wm-neu')}
+      ${row('Employed',w.employed+' of '+this.agents.length,'')}
+      ${row('Bankrupt',w.bankrupt,w.bankrupt===0?'wm-good':w.bankrupt>2?'wm-bad':'wm-neu')}
+      <div class="wm-sec">🏛 Government</div>
+      ${row('Mayor',w.mayor,'')}
+      ${row('Active crises',w.crises,w.crises==='none'?'wm-good':'wm-bad')}
+    `;
+    modal.className='vis';
+    // Auto-hide after 12 seconds
+    clearTimeout(this._weeklyTimer);
+    this._weeklyTimer=setTimeout(()=>{if(modal)modal.className='';},12000);
+  }
+
+  _hudTaxChip({rate}){
+    const chip=document.getElementById('tax-chip');
+    const val=document.getElementById('tax-val');
+    if(chip)chip.textContent=`Tax ${Math.round(rate*100)}%`;
+    if(val)val.textContent=Math.round(rate*100)+'%';
+  }
+
+  _adjTax(delta){
+    const tr=this.state.treasury;
+    const newRate=Math.max(0.05,Math.min(0.25,Math.round((tr.taxRate+delta)*1000)/1000));
+    if(newRate===tr.taxRate)return;
+    tr.taxRate=newRate;
+    this._hudTaxChip({rate:newRate});
+    this.engine._news(delta>0?'warn':'good',
+      `Tax ${delta>0?'raised':'lowered'} to ${Math.round(newRate*100)}%`,
+      `Manual adjustment by player. Auto-adjust still active weekly.`);
+  }
+
+  _hlAgent(id){
+    document.querySelectorAll('.ar').forEach(e=>e.classList.remove('sel'));
+    const e=document.getElementById('ar-'+id);if(e){e.classList.add('sel');e.scrollIntoView({block:'nearest'});}
+  }
+
+  _spdBtns(s){
+    document.querySelectorAll('.sb').forEach(b=>b.classList.remove('act'));
+    const m={0:'sb0',.5:'sbh',1:'sb1',2:'sb2',4:'sb4'};
+    const e=document.getElementById(m[s]);if(e)e.classList.add('act');
+  }
+
+  _buildHUD(){
+    const DC={
+      maya:'#7c3aed',ken:'#16a34a',cara:'#ea580c',dan:'#f59e0b',eve:'#6366f1',
+      ben:'#ca8a04',pat:'#0284c7',fatherjo:'#fcd34d',mia:'#0ea5e9',hal:'#93c5fd',
+      sam:'#f9a8d4',tara:'#e879f9',rosa:'#f472b6',lin:'#6ee7b7',grace:'#fb923c',
+      fay:'#818cf8',marco:'#64748b',zack:'#dc2626'
+    };
+    const agRows=this.agents.map(a=>{
+      const c=DC[a.id]||'#fff';
+      const spName=a.sp?this.agents.find(x=>x.id===a.sp)?.name||'':'';
+      const spSpan=spName?`<span style="font-size:0.63vw;color:#f472b6;margin-left:0.23vw">♥${spName}</span>`:'';
+      const cashCol=a.cash<0?'#f87171':a.cash<50?'#fbbf24':'#94a3b8';
+      const thiefBadge=a.detained?'<span class="detained-badge">DETAINED</span>':
+                       a.isThief?'<span class="thief-badge">THIEF</span>':'';
+      const occLabel=a.role.replace(/_/g,' ');
+      return`<div class="ar" id="ar-${a.id}" onclick="window._gs._selAgentById('${a.id}')">
+        <div class="av" style="background:${c}22;border-color:${c};color:${c}">${a.ini}</div>
+        <div class="ai">
+          <div class="an">${a.name}<span id="occ-${a.id}" style="font-size:0.63vw;color:${c};background:${c}22;border:0.06vw solid ${c}60;border-radius:0.2vw;padding:0 0.25vw;margin-left:0.3vw;font-weight:600">${occLabel}</span>${thiefBadge}${a.bankrupt?'<span style="font-size:0.6vw;color:#fca5a5;font-weight:700;margin-left:0.2vw">BKRPT</span>':''}${spSpan}</div>
+          <div class="arl" id="rl-${a.id}">${a.state} · <span id="ca-${a.id}" style="color:${cashCol}">$${a.cash}</span></div>
+        </div>
+        <div class="ab">
+          <div class="br"><span class="bl">HP</span><div class="ba"><div id="hp-${a.id}" class="bf" style="width:100%;background:#22c55e"></div></div><span class="bn">100</span></div>
+          <div class="br"><span class="bl">MO</span><div class="ba"><div id="md-${a.id}" class="bf" style="width:50%;background:#3b82f6"></div></div><span class="bn">50</span></div>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Topbar chips: Economy · Morale · Happiness · Reputation · Crime · Tourists
+    const chips=[
+      {id:'ec', val:'72',     col:'#22c55e', lbl:'Economy'},
+      {id:'mo', val:'60',     col:'#f97316', lbl:'Morale'},
+      {id:'ha', val:'62',     col:'#a78bfa', lbl:'Happiness'},
+      {id:'re', val:'55',     col:'#fcd34d', lbl:'Reputation'},
+      {id:'cr', val:'18%',    col:'#f87171', lbl:'Crime'},
+      {id:'tu', val:'2',      col:'#34d399', lbl:'Tourists'},
+    ].map(c=>`<div class="chip" id="chip-${c.id}"><div class="cv" style="color:${c.col}">${c.val}<span class="dv fl">→</span></div><div class="cl">${c.lbl}</div></div>`).join('');
+
+    document.getElementById('hs').innerHTML=`
+<!-- TOP BAR: chips + Futures + clock + speed -->
+<div class="tb">
+  <span class="brand">ISLAND</span><div class="vsep"></div>
+  ${chips}
+  <div class="vsep"></div>
+  <div class="fi" id="fi-chip" title="World Futures Index — affects all prices">
+    <span class="fi-lbl">FUTURES</span>
+    <span class="fi-val" id="fi-val">1000</span>
+    <span class="fi-chg fl" id="fi-chg">→0.00%</span>
+  </div>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:0.55vw">
+    <div class="vsep"></div>
+    <div style="display:flex;align-items:center;gap:0.63vw">
+      <div style="text-align:center">
+        <div id="rpt" style="font-size:2.2vw;font-weight:800;color:#fbbf24;line-height:1;letter-spacing:.04em">06:00</div>
+        <div id="rpd" style="font-size:0.7vw;color:#fff9;margin-top:0.14vh;font-weight:500;white-space:nowrap">Mon · Wk 1</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.28vh">
+        <div style="display:flex;gap:0.12vw">
+          <div id="cd1" class="cd act" style="min-width:1.5vw;padding:0.2vh 0.2vw;font-size:0.7vw">M</div>
+          <div id="cd2" class="cd"     style="min-width:1.5vw;padding:0.2vh 0.2vw;font-size:0.7vw">T</div>
+          <div id="cd3" class="cd"     style="min-width:1.5vw;padding:0.2vh 0.2vw;font-size:0.7vw">W</div>
+          <div id="cd4" class="cd"     style="min-width:1.5vw;padding:0.2vh 0.2vw;font-size:0.7vw">T</div>
+          <div id="cd5" class="cd"     style="min-width:1.5vw;padding:0.2vh 0.2vw;font-size:0.7vw">F</div>
+          <div id="cd6" class="cd wk"  style="min-width:1.5vw;padding:0.2vh 0.2vw;font-size:0.7vw">Sa</div>
+          <div id="cd7" class="cd sun" style="min-width:1.5vw;padding:0.2vh 0.2vw;font-size:0.7vw">Su</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.23vw">
+          <div class="tba" style="width:7vw"><div id="tbf" class="tbf" style="width:0%"></div></div>
+          <span id="wbg" class="wb woff" style="font-size:0.7vw;padding:0.14vh 0.39vw">SLEEP</span>
+        </div>
+      </div>
+      <div style="text-align:center;border-left:0.08vw solid #3a1800;padding-left:0.63vw">
+        <div id="rpdays" style="font-size:2.5vw;font-weight:800;color:#a78bfa;line-height:1">1</div>
+        <div style="font-size:0.63vw;color:#fff7;text-transform:uppercase;letter-spacing:.05em;font-weight:600">days</div>
+        <div id="rpscore" style="font-size:0.7vw;color:#60a5fa;font-weight:600;margin-top:0.14vh">Score 0</div>
+      </div>
+    </div>
+    <div class="vsep"></div>
+    <div class="spdrow">
+      <button id="sb0" class="sb" onclick="window._setSpd(0)">⏸</button>
+      <button id="sbh" class="sb" onclick="window._setSpd(0.5)">½×</button>
+      <button id="sb1" class="sb act" onclick="window._setSpd(1)">1×</button>
+      <button id="sb2" class="sb" onclick="window._setSpd(2)">2×</button>
+      <button id="sb4" class="sb" onclick="window._setSpd(4)">4×</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="ma">
+
+  <!-- LEFT PANEL: agents + world news + cash flow log -->
+  <div class="lp">
+    <div class="sh">Agents <span>HP · Mood</span></div>
+    <div class="al" id="aglist">${agRows}</div>
+    <!-- World news -->
+    <div class="sh">World news <span>live</span></div>
+    <div class="nl" id="nl" style="max-height:18vh;flex-shrink:0">
+      <div class="nt ng2"><div class="ni2">+</div><div class="nb"><div class="nti">Island founded!</div><div class="nsb">$1,000 treasury · 3-day stocks · Survive!</div></div><div class="ntm">06:00</div></div>
+    </div>
+    <div class="sh">Cash flow <span>live</span></div>
+    <div class="belog" id="belog">
+      <div class="beli earn">+$0 Island founded</div>
+    </div>
+  </div>
+
+  <!-- MAP -->
+  <div class="mc"></div>
+
+  <!-- RIGHT PANEL: treasury + inventory + market prices + career + agent detail -->
+  <div class="rp" style="position:relative">
+
+    <!-- Weekly summary modal — overlays right panel every 7 days -->
+    <div id="weekly-modal">
+      <div class="wm-title">
+        📊 Week <span id="wm-week">1</span> Summary
+        <span class="wm-close" onclick="document.getElementById('weekly-modal').className=''">✕ Close</span>
+      </div>
+      <div id="wm-body" style="flex:1"></div>
+    </div>
+
+    <!-- Treasury -->
+    <div class="sh">Treasury <span id="tax-chip" style="color:#fbbf24">Tax 10%</span></div>
+    <div class="tb2">
+      <div class="tl2">Balance</div>
+      <div style="display:flex;align-items:baseline">
+        <div id="tval" class="tv">$1,000</div>
+        <div id="tdlt" class="td" style="color:#64748b">→ $0/day</div>
+      </div>
+      <div class="m3w">
+        <div class="m3"><div id="m3inc" class="m3v ok">$0</div><div class="m3l">Income</div></div>
+        <div class="m3"><div id="m3exp" class="m3v" style="color:#f87171">$0</div><div class="m3l">Expense</div></div>
+        <div class="m3"><div id="m3def" class="m3v ok">0%</div><div class="m3l">Deficit</div></div>
+      </div>
+      <div class="tax-row">
+        <span class="tax-lbl">Tax rate</span>
+        <span id="tax-val" class="tax-val">10%</span>
+        <button class="tax-btn" onclick="window._gs._adjTax(-0.01)">−1%</button>
+        <button class="tax-btn" onclick="window._gs._adjTax(+0.01)">+1%</button>
+        <span style="font-size:0.63vw;color:#475569;margin-left:0.3vw">Mayor auto-adjusts weekly</span>
+      </div>
+    </div>
+
+    <!-- Inventory moved here from left panel -->
+    <div class="sh">Inventory <span>stock · days left</span></div>
+    <div class="ig" id="invg"><div class="ii"><span class="in">Loading…</span></div></div>
+
+    <!-- Dock & Airport live prices -->
+    <div class="sh">Market prices <span id="dock-idx">1.00× nominal</span></div>
+    <div style="padding:0.42vh 0.86vw;border-bottom:0.08vw solid #252840;flex-shrink:0;font-size:0.7vw;display:flex;flex-direction:column;gap:0.28vh">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="color:#64748b;font-weight:600">🚢 DOCK exports</span>
+        <span id="dock-idx2" style="color:#94a3b8">goods · fish · minerals</span>
+      </div>
+      <div style="display:flex;gap:0.55vw;font-size:0.68vw">
+        <span style="color:#94a3b8">Goods <span id="exprice-goods" style="color:#60a5fa">$45/u</span></span>
+        <span style="color:#94a3b8">Fish <span id="exprice-fish" style="color:#60a5fa">$18/u</span></span>
+        <span style="color:#94a3b8">Minerals <span id="exprice-minerals" style="color:#60a5fa">$28/u</span></span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.28vh">
+        <span style="color:#64748b;font-weight:600">✈ AIRPORT imports</span>
+        <span id="airport-idx" style="color:#94a3b8">1.00× · $50/flight</span>
+      </div>
+      <div style="display:flex;gap:0.55vw;font-size:0.68vw">
+        <span style="color:#94a3b8">Food <span id="bprice-food" style="color:#4ade80">$3/u</span></span>
+        <span style="color:#94a3b8">Med <span id="bprice-medicine" style="color:#4ade80">$12/u</span></span>
+        <span style="color:#94a3b8">Fuel <span id="bprice-fuel" style="color:#4ade80">$6/u</span></span>
+        <span style="color:#94a3b8">Mat <span id="bprice-rawMat" style="color:#4ade80">$10/u</span></span>
+      </div>
+    </div>
+
+    <!-- Career election log -->
+    <div class="sh" id="career-sh">Careers <span id="career-term">Term 1 · Day 30</span></div>
+    <div class="nl" id="career-log" style="flex:1;min-height:0">
+      <div class="nt nif"><div class="ni2">★</div><div class="nb"><div class="nti">Term begins</div><div class="nsb">First election in 30 days. Wanderers may apply for any role.</div></div><div class="ntm">Day 1</div></div>
+    </div>
+
+    <!-- Agent detail (click any agent) -->
+    <div id="ad"></div>
+  </div>
+</div>
+
+<!-- BOTTOM NEWS BAR -->
+<div class="nbar">
+  <span class="ntg ntg-w">WORLD</span>
+  <span class="tkr" id="tkr"><span>Monitoring world events…</span></span>
+  <div class="sv" style="margin-left:auto"><div id="botdays" class="svv">Day 1</div><div class="svl">survived</div></div>
+</div>`;
+
+    window._gs=this; // expose scene for onclick handlers
+  }
+
+  _sizeHUD(){
+    const canvas=document.querySelector('#gw canvas');
+    const hud=document.getElementById('hr');
+    if(!canvas||!hud)return;
+    const resize=()=>{
+      const r=canvas.getBoundingClientRect();
+      hud.style.width=r.width+'px';
+      hud.style.height=r.height+'px';
+      hud.style.left=r.left+'px';
+      hud.style.top=r.top+'px';
+      hud.style.transform='none';
+    };
+    resize();
+    new ResizeObserver(resize).observe(document.documentElement);
+    window.addEventListener('resize',resize);
+  }
+}
+
+// ── BOOT ─────────────────────────────────────────────────────
+window.addEventListener('load',()=>{
+  new Phaser.Game({
+    type:Phaser.AUTO,width:W,height:H,backgroundColor:'#0d0f18',
+    scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH,width:W,height:H},
+    scene:[GameScene],parent:'gw',
+    render:{antialias:false,pixelArt:false,roundPixels:true},
+    dom:{createContainer:false},
+  });
+});
+</script>
+</body>
+</html>
